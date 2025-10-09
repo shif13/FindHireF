@@ -12,7 +12,13 @@ const Home = () => {
 
   const REVIEWS_LIMIT = 6;
   const FEATURED_LIMIT = 3;
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
+
+console.log('🔍 Environment variable:', import.meta.env.VITE_BACKEND_URL);
+console.log('🔍 API_BASE:', API_BASE);
+
+
   useEffect(() => {
     fetchReviews();
     fetchReviewStats();
