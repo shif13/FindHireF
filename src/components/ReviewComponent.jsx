@@ -4,6 +4,8 @@ import {
   Loader, X, Edit3, Save, Trash2, MessageCircle, Award
 } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +25,6 @@ const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) =
   const [editingReview, setEditingReview] = useState(null);
   const [editForm, setEditForm] = useState({});
 
-  const API_BASE = 'https://projectk-6vkc.onrender.com/api';
-
   const categories = [
     { value: 'general', label: 'General Experience' },
     { value: 'job-search', label: 'Job Search' },
@@ -41,8 +41,8 @@ const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) =
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/reviews`, {
-        headers: {
+      const response = await fetch(`${API_BASE}/api/reviews`, {
+          headers: {
           'Content-Type': 'application/json'
         }
       });
@@ -83,8 +83,8 @@ const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) =
         return;
       }
 
-      const response = await fetch(`${API_BASE}/reviews`, {
-        method: 'POST',
+    const response = await fetch(`${API_BASE}/api/reviews`, {
+          method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -137,8 +137,8 @@ const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) =
       setSubmitting(true);
       const token = getAuthToken();
 
-      const response = await fetch(`${API_BASE}/reviews/${reviewId}`, {
-        method: 'PUT',
+const response = await fetch(`${API_BASE}/api/reviews/${reviewId}`, {
+          method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -173,8 +173,8 @@ const ReviewSystem = ({ isModal = false, onClose = null, currentUser = null }) =
 
     try {
       const token = getAuthToken();
-      const response = await fetch(`${API_BASE}/reviews/${reviewId}`, {
-        method: 'DELETE',
+const response = await fetch(`${API_BASE}/api/reviews/${reviewId}`, {
+          method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

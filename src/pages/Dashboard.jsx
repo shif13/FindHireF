@@ -38,7 +38,7 @@ const Dashboard = () => {
     certificateFiles: []
   });
 
-  const API_BASE = 'https://projectk-6vkc.onrender.com/api';
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
   const experienceOptions = [
     'Entry Level (0-1 years)',
@@ -776,7 +776,7 @@ const Dashboard = () => {
                     <label className="block text-sm font-medium text-gray-500 mb-2">CV/Resume</label>
                     {profile?.cvFilePath ? (
                       <a 
-                        href={`https://projectk-6vkc.onrender.com/${profile.cvFilePath}`} 
+href={`${import.meta.env.VITE_BACKEND_URL}/${profile.cvFilePath}`}
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
@@ -804,7 +804,7 @@ const Dashboard = () => {
                             {certs.map((cert, index) => (
                               <a 
                                 key={index} 
-                                href={`https://projectk-6vkc.onrender.com/${cert}`} 
+href={`${import.meta.env.VITE_BACKEND_URL}/${cert}`}
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors"

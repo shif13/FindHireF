@@ -41,9 +41,8 @@ const EquipmentSearch = () => {
       if (locationFilter.trim()) params.append('location', locationFilter.trim());
       if (availabilityFilter !== 'all') params.append('availability', availabilityFilter);
       
-      const url = `https://projectk-6vkc.onrender.com/api/equipment/search${params.toString() ? '?' + params.toString() : ''}`;
-      
-      const response = await fetch(url);
+const url = `${import.meta.env.VITE_BACKEND_URL}/api/equipment/search${params.toString() ? '?' + params.toString() : ''}`;
+            const response = await fetch(url);
       const data = await response.json();
       
       if (data.success) {
@@ -127,8 +126,8 @@ const EquipmentSearch = () => {
         message: contactForm.message
       };
 
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/equipment/contact', {
-        method: 'POST',
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/equipment/contact`, {
+            method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -387,7 +386,7 @@ const EquipmentSearch = () => {
                         <FileText size={18} className="text-gray-400" />
                         <span className="text-sm text-gray-700 flex-1">{file.originalName}</span>
                         <a
-                          href={`https://projectk-6vkc.onrender.com/${file.path}`}
+href={`${import.meta.env.VITE_BACKEND_URL}/${file.path}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-blue-600 hover:text-blue-700 font-medium"

@@ -78,8 +78,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/login/login', {
-        method: 'POST',
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/reset-password`, {
+            method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -121,8 +121,8 @@ const Login = () => {
     setForgotLoading(true);
 
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/login/forgot-password', {
-        method: 'POST',
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forgot-password`, {
+            method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

@@ -12,8 +12,7 @@ const Home = () => {
 
   const REVIEWS_LIMIT = 6;
   const FEATURED_LIMIT = 3;
-  const API_BASE = 'https://projectk-6vkc.onrender.com/api';
-
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
   useEffect(() => {
     fetchReviews();
     fetchReviewStats();

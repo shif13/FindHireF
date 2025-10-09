@@ -237,8 +237,8 @@ const Register = () => {
         jsCertificates.forEach((file) => formDataToSend.append('certificateFiles', file));
       }
       
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/register', {
-        method: 'POST',
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/register`, {
+          method: 'POST',
         body: formDataToSend
       });
       
@@ -309,8 +309,8 @@ const Register = () => {
         );
       }
 
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/equipment/create', {
-        method: 'POST',
+const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/equipment/create`, {
+          method: 'POST',
         body: formDataToSend,
       });
 

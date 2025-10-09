@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Filter, ChevronDown, Zap, Users, MessageCircle, DollarSign, Briefcase, Mail, Home, ArrowLeft, Linkedin, Github, User, Phone, Star, Award, Clock, Eye, TrendingUp, Code, Database, Layers, BarChart, Settings, Smartphone, Palette, CheckCircle, Send, X, Sparkles, Target, Globe } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 const RecruitmentToolkit = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [locationSearch, setLocationSearch] = useState('');
@@ -37,7 +39,7 @@ const RecruitmentToolkit = () => {
 
   const loadDashboardStats = async () => {
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/stats');
+      const response = await fetch(`${API_BASE}/api/search/stats`);
       const data = await response.json();
       if (data.success) {
         setDashboardStats(data);
@@ -49,7 +51,7 @@ const RecruitmentToolkit = () => {
 
   const loadProfessionalCategories = async () => {
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/categories');
+      const response = await fetch(`${API_BASE}/api/search/categories`);
       const data = await response.json();
       if (data.success) {
         setProfessionalCategories(data.categories);
@@ -87,8 +89,7 @@ const RecruitmentToolkit = () => {
     setError('');
    
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/jobseekers', {
-        method: 'POST',
+      const response = await fetch(`${API_BASE}/api/search/jobseekers`, {        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -115,42 +116,6 @@ const RecruitmentToolkit = () => {
     }
   };
 
-  const handleSkillMatch = async () => {
-    if (!skillsInput.trim()) {
-      setError('Please enter skills to match');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-   
-    try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/match-skills', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          skills: skillsInput
-        }),
-      });
-     
-      const data = await response.json();
-      if (response.ok) {
-        setCandidates(data.matches || []);
-        setSearchType('skills');
-        setSearchStats(data.statistics);
-      } else {
-        setError(data.msg || 'Skill matching failed');
-      }
-    } catch (error) {
-      console.error('Skill match error:', error);
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLocationSearch = async () => {
     if (!locationSearch.trim()) {
       setError('Please enter a location to search');
@@ -161,8 +126,8 @@ const RecruitmentToolkit = () => {
     setError('');
    
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/jobseekers', {
-        method: 'POST',
+      const response = await fetch(`${API_BASE}/api/search/jobseekers`, {
+          method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -189,49 +154,9 @@ const RecruitmentToolkit = () => {
     }
   };
 
-  const handleCategorySearch = async (categoryName) => {
-    setSearchKeyword(categoryName);
-    setLocationSearch('');
-    setSelectedFilters({
-      experience: '',
-      salaryRange: ''
-    });
-    setLoading(true);
-    setError('');
-   
-    try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/search/jobseekers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobTitle: categoryName,
-          location: '',
-          experience: '',
-          salaryRange: ''
-        }),
-      });
-     
-      const data = await response.json();
-      if (response.ok) {
-        setCandidates(data.candidates || []);
-        setSearchType('general');
-        setSearchStats(data.searchCriteria);
-      } else {
-        setError(data.msg || 'Search failed');
-      }
-    } catch (error) {
-      console.error('Category search error:', error);
-      setError('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const viewCandidateDetails = async (candidateId) => {
     try {
-      const response = await fetch(`https://projectk-6vkc.onrender.com/api/search/candidate/${candidateId}`);
+    const response = await fetch(`${API_BASE}/api/search/candidate/${candidateId}`);
       const data = await response.json();
       if (data.success) {
         setSelectedCandidate(data.candidate);
@@ -283,8 +208,8 @@ const RecruitmentToolkit = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/contact/send-email', {
-        method: 'POST',
+      const response = await fetch(`${API_BASE}/api/contact/send-email`, {
+          method: 'POST',
         headers,
         body: JSON.stringify({
           candidateId: emailModal.candidate.id,

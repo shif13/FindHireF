@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, Eye, Mail, Phone, MessageCircle, ArrowLeft, FileText, Award, X, Download } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 const FreelancerDetails = () => {
   const [freelancer, setFreelancer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,8 +19,6 @@ const FreelancerDetails = () => {
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState({ show: false, type: '', message: '' });
 
-  const API_BASE = 'https://projectk-6vkc.onrender.com/api';
-
   useEffect(() => {
     fetchFreelancerDetails();
   }, []);
@@ -28,8 +28,8 @@ const FreelancerDetails = () => {
       setLoading(true);
       const freelancerId = window.location.pathname.split('/').pop();
       
-      const response = await fetch(`${API_BASE}/freelancers/${freelancerId}`, {
-        headers: {
+const response = await fetch(`${API_BASE}/api/freelancers/${freelancerId}`, {
+          headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'
         }
@@ -81,7 +81,7 @@ const FreelancerDetails = () => {
     if (freelancer?.cvFilePath) {
       // Remove any leading 'uploads/' from the path
       const cleanPath = freelancer.cvFilePath.replace(/^uploads[\/\\]/, '').replace(/\\/g, '/');
-      const finalUrl = `https://projectk-6vkc.onrender.com/uploads/${cleanPath}`;
+const finalUrl = `${API_BASE}/uploads/${cleanPath}`;
       console.log('CV Path:', freelancer.cvFilePath);
       console.log('Clean Path:', cleanPath);
       console.log('Final URL:', finalUrl);
@@ -99,7 +99,7 @@ const FreelancerDetails = () => {
       const certPath = freelancer.certificatesPath[index];
       // Remove any leading 'uploads/' from the path
       const cleanPath = certPath.replace(/^uploads[\/\\]/, '').replace(/\\/g, '/');
-      const finalUrl = `https://projectk-6vkc.onrender.com/uploads/${cleanPath}`;
+const finalUrl = `${API_BASE}/uploads/${cleanPath}`;
       console.log('Certificate Path:', certPath);
       console.log('Clean Path:', cleanPath);
       console.log('Final URL:', finalUrl);
@@ -155,8 +155,8 @@ const FreelancerDetails = () => {
       setEmailSending(true);
       setEmailStatus({ show: false, type: '', message: '' });
 
-      const response = await fetch(`${API_BASE}/contact/freelancer`, {
-        method: 'POST',
+const response = await fetch(`${API_BASE}/api/contact/freelancer`, {
+          method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
