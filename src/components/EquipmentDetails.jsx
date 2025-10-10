@@ -28,7 +28,7 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL;
       setLoading(true);
       const equipmentId = window.location.pathname.split('/').pop();
       
-      const response = await fetch(`${API_BASE}/api/equipment/${equipmentId}`, {
+      const response = await fetch(`${API_BASE}/equipment/${equipmentId}`, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'
@@ -129,7 +129,7 @@ return `${import.meta.env.VITE_BACKEND_URL}/uploads/${cleanPath}`;  };
       setEmailSending(true);
       setEmailStatus({ show: false, type: '', message: '' });
 
-      const response = await fetch(`${API_BASE}/api/contact/equipment`, {
+      const response = await fetch(`${API_BASE}/contact/equipment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
