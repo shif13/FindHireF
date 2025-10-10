@@ -17,46 +17,51 @@ const EquipmentDetails = () => {
   const [emailSending, setEmailSending] = useState(false);
   const [emailStatus, setEmailStatus] = useState({ show: false, type: '', message: '' });
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     fetchEquipmentDetails();
   }, []);
 
   const fetchEquipmentDetails = async () => {
-    try {
-      setLoading(true);
-      const equipmentId = window.location.pathname.split('/').pop();
-      
-      const response = await fetch(`${API_BASE}/equipment/${equipmentId}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    setLoading(true);
+    const equipmentId = window.location.pathname.split('/').pop();
+    
+    console.log('Fetching equipment ID:', equipmentId);
+    console.log('API Base:', API_BASE);
+    console.log('Full URL:', `${API_BASE}/api/equipment/details/${equipmentId}`);
+    
+    const response = await fetch(`${API_BASE}/api/equipment/details/${equipmentId}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
       }
-      
-      const data = await response.json();
-      
-      if (data.success && data.equipment) {
-        setEquipment(data.equipment);
-        setEmailData(prev => ({
-          ...prev,
-          message: `Hello,\n\nI'm interested in renting your ${data.equipment.equipmentName}.\n\nCould you please provide more information about:\n- Availability dates\n- Rental terms and pricing\n- Pickup/delivery options\n\nThank you!`
-        }));
-      } else {
-        setError('Equipment not found');
-      }
-    } catch (error) {
-      console.error('Error fetching equipment:', error);
-      setError('Failed to load equipment details');
-    } finally {
-      setLoading(false);
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+    
+    const data = await response.json();
+    console.log('Equipment data received:', data);
+    
+    if (data.success && data.equipment) {
+      setEquipment(data.equipment);
+      setEmailData(prev => ({
+        ...prev,
+        message: `Hello,\n\nI'm interested in renting your ${data.equipment.equipmentName}.\n\nCould you please provide more information about:\n- Availability dates\n- Rental terms and pricing\n- Pickup/delivery options\n\nThank you!`
+      }));
+    } else {
+      setError('Equipment not found');
+    }
+  } catch (error) {
+    console.error('Error fetching equipment:', error);
+    setError('Failed to load equipment details');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBack = () => {
     window.location.href = '/';
@@ -65,7 +70,8 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL;
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     const cleanPath = imagePath.replace(/\\/g, '/').replace(/^uploads\//, '');
-return `${import.meta.env.VITE_BACKEND_URL}/uploads/${cleanPath}`;  };
+    return `${import.meta.env.VITE_BACKEND_URL}/uploads/${cleanPath}`;
+  };
 
   const handleImageClick = (index) => {
     setCurrentImageIndex(index);
@@ -103,85 +109,86 @@ return `${import.meta.env.VITE_BACKEND_URL}/uploads/${cleanPath}`;  };
     setEmailStatus({ show: false, type: '', message: '' });
   };
 
-  const handleSendEmail = async (e) => {
-    e.preventDefault();
-    
-    if (!emailData.senderName || !emailData.senderEmail || !emailData.message) {
+const handleSendEmail = async (e) => {
+  e.preventDefault();
+  
+  if (!emailData.senderName || !emailData.senderEmail || !emailData.message) {
+    setEmailStatus({
+      show: true,
+      type: 'error',
+      message: 'Please fill in all required fields'
+    });
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(emailData.senderEmail)) {
+    setEmailStatus({
+      show: true,
+      type: 'error',
+      message: 'Please enter a valid email address'
+    });
+    return;
+  }
+
+  try {
+    setEmailSending(true);
+    setEmailStatus({ show: false, type: '', message: '' });
+
+    // ✅ ADD /api prefix here
+    const response = await fetch(`${API_BASE}/api/contact/equipment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        equipmentId: equipment.id,
+        inquiryData: {
+          name: emailData.senderName,
+          email: emailData.senderEmail,
+          phone: emailData.senderPhone,
+          message: emailData.message
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
       setEmailStatus({
         show: true,
-        type: 'error',
-        message: 'Please fill in all required fields'
+        type: 'success',
+        message: 'Inquiry sent successfully! The equipment owner will receive your message.'
       });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailData.senderEmail)) {
-      setEmailStatus({
-        show: true,
-        type: 'error',
-        message: 'Please enter a valid email address'
-      });
-      return;
-    }
-
-    try {
-      setEmailSending(true);
-      setEmailStatus({ show: false, type: '', message: '' });
-
-      const response = await fetch(`${API_BASE}/contact/equipment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          equipmentId: equipment.id,
-          inquiryData: {
-            name: emailData.senderName,
-            email: emailData.senderEmail,
-            phone: emailData.senderPhone,
-            message: emailData.message
-          }
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setEmailStatus({
-          show: true,
-          type: 'success',
-          message: 'Inquiry sent successfully! The equipment owner will receive your message.'
+      
+      setTimeout(() => {
+        setShowEmailModal(false);
+        setEmailData({
+          senderName: '',
+          senderEmail: '',
+          senderPhone: '',
+          message: `Hello,\n\nI'm interested in renting your ${equipment.equipmentName}.\n\nCould you please provide more information about:\n- Availability dates\n- Rental terms and pricing\n- Pickup/delivery options\n\nThank you!`
         });
-        
-        setTimeout(() => {
-          setShowEmailModal(false);
-          setEmailData({
-            senderName: '',
-            senderEmail: '',
-            senderPhone: '',
-            message: `Hello,\n\nI'm interested in renting your ${equipment.equipmentName}.\n\nCould you please provide more information about:\n- Availability dates\n- Rental terms and pricing\n- Pickup/delivery options\n\nThank you!`
-          });
-          setEmailStatus({ show: false, type: '', message: '' });
-        }, 2000);
-      } else {
-        setEmailStatus({
-          show: true,
-          type: 'error',
-          message: data.message || 'Failed to send inquiry. Please try again.'
-        });
-      }
-    } catch (error) {
-      console.error('Error sending inquiry:', error);
+        setEmailStatus({ show: false, type: '', message: '' });
+      }, 2000);
+    } else {
       setEmailStatus({
         show: true,
         type: 'error',
-        message: 'Failed to send inquiry. Please try again later.'
+        message: data.message || 'Failed to send inquiry. Please try again.'
       });
-    } finally {
-      setEmailSending(false);
     }
-  };
+  } catch (error) {
+    console.error('Error sending inquiry:', error);
+    setEmailStatus({
+      show: true,
+      type: 'error',
+      message: 'Failed to send inquiry. Please try again later.'
+    });
+  } finally {
+    setEmailSending(false);
+  }
+};
 
   const handleEnterKey = (e) => {
     if (e.key === "Enter") {
