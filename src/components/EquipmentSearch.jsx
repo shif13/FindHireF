@@ -386,13 +386,15 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/equipment/
                         <FileText size={18} className="text-gray-400" />
                         <span className="text-sm text-gray-700 flex-1">{file.originalName}</span>
                         <a
-href={`${import.meta.env.VITE_BACKEND_URL}/${file.path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          View
-                        </a>
+href={file.path.startsWith('http://') || file.path.startsWith('https://') 
+    ? file.path 
+    : `${import.meta.env.VITE_BACKEND_URL}/${file.path}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+>
+  View
+</a>
                       </div>
                     ))}
                   </div>
