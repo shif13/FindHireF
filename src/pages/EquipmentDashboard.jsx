@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Package, LogOut, Plus, Edit, Trash2, X, Upload, 
   AlertCircle, CheckCircle, Loader, MapPin, Phone, 
-  Mail, User, Image as ImageIcon, ToggleLeft, ToggleRight
+  Mail, User, Image as ImageIcon, ToggleLeft, ToggleRight, MessageCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ReviewSystem from '../components/ReviewComponent';
 
 
 const EquipmentDashboard = () => {
@@ -21,6 +22,9 @@ const EquipmentDashboard = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
 
+  // Review modal state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  
   // Form states
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -441,21 +445,29 @@ const handleUpdateProfile = async (e) => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
+  <button
+    onClick={() => setShowProfileModal(true)}
+    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+  >
+    <Edit className="w-4 h-4" />
+    Edit Profile
+  </button>
+  <button
+    onClick={() => setShowReviewModal(true)}
+    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+  >
+    <MessageCircle className="w-4 h-4" />
+    Reviews
+  </button>
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+  >
+    <LogOut className="w-4 h-4" />
+    Logout
+  </button>
+</div>
+
           </div>
         </div>
       </div>
@@ -1172,6 +1184,15 @@ const handleUpdateProfile = async (e) => {
           </div>
         </div>
       )}
+
+{showReviewModal && (
+  <ReviewSystem
+    isModal={true}
+    onClose={() => setShowReviewModal(false)}
+    currentUser={user}
+  />
+)}
+
     </div>
   );
 };

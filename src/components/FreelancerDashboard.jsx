@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Save, X, Upload, FileText, Award, LogOut, 
-  AlertCircle, CheckCircle, Loader, Download, Trash2
+  AlertCircle, CheckCircle, MessageCircle, Loader, Download, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ReviewSystem from '../components/ReviewComponent';
 
 const FreelancerDashboard = () => {
   const [user, setUser] = useState(null);
@@ -21,6 +22,9 @@ const FreelancerDashboard = () => {
   const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
   const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  
   const [formData, setFormData] = useState({
     // From users table
     firstName: '',
@@ -301,23 +305,30 @@ const FreelancerDashboard = () => {
                 {profile && profile.title ? `Welcome back, ${user?.firstName}` : 'Complete your profile to get started'}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              {profile && profile.title && !isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Edit Profile
-                </button>
-              )}
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            </div>
+          <div className="flex items-center gap-3">
+  {profile && profile.title && !isEditing && (
+    <button
+      onClick={() => setIsEditing(true)}
+      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+    >
+      Edit Profile
+    </button>
+  )}
+  <button
+    onClick={() => setShowReviewModal(true)}
+    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+  >
+    <MessageCircle className="w-4 h-4" />
+    Reviews
+  </button>
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+  >
+    <LogOut className="w-4 h-4" />
+    Logout
+  </button>
+</div>
           </div>
         </div>
       </div>
@@ -794,6 +805,14 @@ const FreelancerDashboard = () => {
           </div>
         )}
       </div>
+
+      {showReviewModal && (
+  <ReviewSystem 
+    isModal={true}
+    onClose={() => setShowReviewModal(false)}
+    currentUser={user}
+  />
+)}
     </div>
   );
 };

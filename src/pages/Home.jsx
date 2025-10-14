@@ -232,12 +232,20 @@ const Home = () => {
                 );
               })}
             </div>
-            <button
-              onClick={() => handleNavigation('/signup')}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              Sign Up
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleNavigation('/login')}
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-lg font-semibold transition-all duration-300"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => handleNavigation('/signup')}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Sign Up
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -672,8 +680,6 @@ const Home = () => {
                   )}
                 </div>
               </div>
-
-              
 
               {/* View All Button */}
               <div className="pt-4 border-t">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, X, CheckCircle, AlertCircle, Home as HomeIcon, Users, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import videoFile from '../assets/videos/video2.mp4';
 
@@ -89,37 +89,30 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-  // Store token and user data
-  localStorage.setItem('token', data.token);
-  localStorage.setItem('userData', JSON.stringify(data.user));
-  
-  console.log('Login successful. User data:', data.user);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userData', JSON.stringify(data.user));
+        
+        console.log('Login successful. User data:', data.user);
 
-  // ✅ FIXED: Route based on rolesSelected flag
-  if (!data.user.rolesSelected) {
-    // User hasn't selected roles yet - redirect to role selection
-    console.log('Redirecting to role selection...');
-    navigate('/select-role');
-  } else {
-    if (data.user.isFreelancer && !data.user.isEquipmentOwner) {
-      // Only freelancer
-      console.log('Redirecting to freelancer dashboard...');
-      navigate('/freelancer-dashboard'); //
-    } else if (data.user.isEquipmentOwner && !data.user.isFreelancer) {
-      // Only equipment owner
-      console.log('Redirecting to equipment dashboard...');
-      navigate('/equipmentdashboard');
-    } else if (data.user.isFreelancer && data.user.isEquipmentOwner) {
-      // Both roles
-      console.log('User has both roles, redirecting to combined dashboard...');
-      navigate('/equipskilldashboard');
-    } else {
-      // No roles selected (shouldn't happen, but just in case)
-      console.warn('User has rolesSelected=true but no roles! Redirecting to role selection...');
-      navigate('/select-role');
-    }
-  }
-} else {
+        if (!data.user.rolesSelected) {
+          console.log('Redirecting to role selection...');
+          navigate('/select-role');
+        } else {
+          if (data.user.isFreelancer && !data.user.isEquipmentOwner) {
+            console.log('Redirecting to freelancer dashboard...');
+            navigate('/freelancer-dashboard');
+          } else if (data.user.isEquipmentOwner && !data.user.isFreelancer) {
+            console.log('Redirecting to equipment dashboard...');
+            navigate('/equipmentdashboard');
+          } else if (data.user.isFreelancer && data.user.isEquipmentOwner) {
+            console.log('User has both roles, redirecting to combined dashboard...');
+            navigate('/equipskilldashboard');
+          } else {
+            console.warn('User has rolesSelected=true but no roles! Redirecting to role selection...');
+            navigate('/select-role');
+          }
+        }
+      } else {
         setError(data.msg || 'Login failed');
       }
     } catch (error) {
@@ -250,8 +243,50 @@ const Login = () => {
     setResetError('');
   };
 
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: HomeIcon, path: '/' },
+    { id: 'equipment', label: 'Find Equipment', icon: Search, path: '/equipment' },
+    { id: 'manpower', label: 'Find Manpower', icon: Users, path: '/recruiter' }
+  ];
+
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
+      {/* Navigation Bar */}
+      <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-8">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = false;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigation(item.path)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-gray-100 text-gray-900 font-medium border-b-2 border-blue-500'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="hidden sm:inline text-sm font-medium">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-3">
+             
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
         <video
@@ -268,123 +303,125 @@ const Login = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-md w-full space-y-8 relative z-10">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-4 drop-shadow-lg">
-            Welcome Back
-          </h1>
-          <p className="text-white text-lg drop-shadow-md">Sign in to your ProFetch account</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center py-12 px-4 relative z-10">
+        <div className="max-w-md w-full space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-4 drop-shadow-lg">
+              Welcome Back
+            </h1>
+            <p className="text-white text-lg drop-shadow-md">Sign in to your ProFetch account</p>
+          </div>
 
-        {/* Login Form */}
-        <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                Username or Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="usernameOrEmail"
-                  name="usernameOrEmail"
-                  type="text"
-                  value={formData.usernameOrEmail}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your username or email"
-                  required
-                />
+          {/* Login Form */}
+          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                  Username or Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    id="usernameOrEmail"
+                    name="usernameOrEmail"
+                    type="text"
+                    value={formData.usernameOrEmail}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your username or email"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Enter your password"
-                  required
-                />
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  onClick={openForgotModal}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  Forgot password?
                 </button>
               </div>
-            </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-              </label>
               <button
-                type="button"
-                onClick={openForgotModal}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                  loading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg transform hover:-translate-y-0.5'
+                }`}
               >
-                Forgot password?
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
-            </div>
+            </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg transform hover:-translate-y-0.5'
-              }`}
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </form>
-
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+            <div className="mt-8">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
-              </div>
-            </div>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => navigate('/signup')}
-                className="w-full py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 hover:border-gray-400"
-              >
-                Create New Account
-              </button>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => navigate('/signup')}
+                  className="w-full py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 hover:border-gray-400"
+                >
+                  Create New Account
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Forgot Password Modal - keeping the same as before */}
+      {/* Forgot Password Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">

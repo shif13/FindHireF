@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  User, Package, Save, X, Upload, FileText, Award, LogOut, 
+  User, Package, Save, MessageCircle, X, Upload, FileText, Award, LogOut, 
   AlertCircle, CheckCircle, Loader, Download, Trash2, Edit,
   MapPin, Phone, Mail, ToggleLeft, ToggleRight, Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ReviewSystem from '../components/ReviewComponent';
 
 const EquipSkillDashboard = () => {
   const [activeTab, setActiveTab] = useState('professional'); // 'professional' or 'equipment'
@@ -26,6 +27,9 @@ const EquipSkillDashboard = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
+  
+  // Review modal
+  const [showReviewModal, setShowReviewModal] = useState(false);
   
   // Upload states
   const [uploadingCV, setUploadingCV] = useState(false);
@@ -489,13 +493,23 @@ const EquipSkillDashboard = () => {
               <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
               <p className="text-sm text-gray-600">Welcome back, {user?.firstName}!</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+           <div className="flex items-center gap-3">
+  <button
+    onClick={() => setShowReviewModal(true)}
+    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+  >
+    <MessageCircle className="w-4 h-4" />
+    Reviews
+  </button>
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+  >
+    <LogOut className="w-4 h-4" />
+    Logout
+  </button>
+</div>
+
           </div>
         </div>
       </div>
@@ -1561,6 +1575,15 @@ const EquipSkillDashboard = () => {
           </div>
         </div>
       )}
+
+      {showReviewModal && (
+  <ReviewSystem 
+    isModal={true}
+    onClose={() => setShowReviewModal(false)}
+    currentUser={user}
+  />
+)}
+
     </div>
   );
 };
