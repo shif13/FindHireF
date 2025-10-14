@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, User, Building, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import videoFile from '../assets/videos/video2.mp4';
 
@@ -78,8 +78,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/reset-password`, {
-            method: 'POST',
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/login`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -89,10 +89,37 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/rese
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        navigate('/dashboard');
-      } else {
+  // Store token and user data
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('userData', JSON.stringify(data.user));
+  
+  console.log('Login successful. User data:', data.user);
+
+  // ✅ FIXED: Route based on rolesSelected flag
+  if (!data.user.rolesSelected) {
+    // User hasn't selected roles yet - redirect to role selection
+    console.log('Redirecting to role selection...');
+    navigate('/select-role');
+  } else {
+    if (data.user.isFreelancer && !data.user.isEquipmentOwner) {
+      // Only freelancer
+      console.log('Redirecting to freelancer dashboard...');
+      navigate('/freelancer-dashboard'); //
+    } else if (data.user.isEquipmentOwner && !data.user.isFreelancer) {
+      // Only equipment owner
+      console.log('Redirecting to equipment dashboard...');
+      navigate('/equipmentdashboard');
+    } else if (data.user.isFreelancer && data.user.isEquipmentOwner) {
+      // Both roles
+      console.log('User has both roles, redirecting to combined dashboard...');
+      navigate('/equipskilldashboard');
+    } else {
+      // No roles selected (shouldn't happen, but just in case)
+      console.warn('User has rolesSelected=true but no roles! Redirecting to role selection...');
+      navigate('/select-role');
+    }
+  }
+} else {
         setError(data.msg || 'Login failed');
       }
     } catch (error) {
@@ -121,8 +148,8 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/rese
     setForgotLoading(true);
 
     try {
-const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forgot-password`, {
-            method: 'POST',
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forgot-password`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -137,7 +164,6 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
           setShowForgotModal(false);
           setForgotEmail('');
           setForgotMessage('');
-          // Show reset modal after successful forgot password
           setShowResetModal(true);
         }, 3000);
       } else {
@@ -178,7 +204,7 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
     setResetLoading(true);
 
     try {
-      const response = await fetch('https://projectk-6vkc.onrender.com/api/login/reset-password', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,7 +264,6 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
           <source src={videoFile} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-        {/* Dark overlay for better readability */}
         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
       </div>
 
@@ -249,7 +274,7 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
           <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-4 drop-shadow-lg">
             Welcome Back
           </h1>
-          <p className="text-white text-lg drop-shadow-md">Sign in to your TalentConnect account</p>
+          <p className="text-white text-lg drop-shadow-md">Sign in to your ProFetch account</p>
         </div>
 
         {/* Login Form */}
@@ -349,7 +374,7 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
             <div className="mt-6">
               <button
                 type="button"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/signup')}
                 className="w-full py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 hover:border-gray-400"
               >
                 Create New Account
@@ -359,7 +384,7 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
+      {/* Forgot Password Modal - keeping the same as before */}
       {showForgotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
@@ -502,7 +527,6 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
                   </button>
                 </div>
 
-                {/* Password Strength Indicator */}
                 {resetData.newPassword && (
                   <div className="mt-2">
                     <div className="flex items-center justify-between mb-1">
@@ -555,7 +579,6 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forg
                   </button>
                 </div>
 
-                {/* Password Match Indicator */}
                 {resetData.newPassword && resetData.confirmPassword && (
                   <div className="mt-1 flex items-center">
                     {resetData.newPassword === resetData.confirmPassword ? (
