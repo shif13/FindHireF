@@ -7,7 +7,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ReviewSystem from '../components/ReviewComponent';
 
-
 const EquipmentDashboard = () => {
   const [user, setUser] = useState(null);
   const [equipment, setEquipment] = useState([]);
@@ -80,7 +79,35 @@ const EquipmentDashboard = () => {
 
       if (data.success) {
         setUser(data.user);
-        setEquipment(data.equipment || []);
+        
+        // Parse equipment images
+        console.log('Raw equipment data:', data.equipment);
+        const parsedEquipment = (data.equipment || []).map(eq => {
+          console.log('Processing equipment:', eq.id, 'Images type:', typeof eq.equipmentImages);
+          
+          let parsedImages = [];
+          try {
+            if (Array.isArray(eq.equipmentImages)) {
+              parsedImages = eq.equipmentImages;
+              console.log('Already array:', parsedImages);
+            } else if (typeof eq.equipmentImages === 'string' && eq.equipmentImages) {
+              const parsed = JSON.parse(eq.equipmentImages);
+              parsedImages = Array.isArray(parsed) ? parsed : [];
+              console.log('Parsed from string:', parsedImages);
+            }
+          } catch (parseError) {
+            console.error('Image parse error for equipment:', eq.id, parseError);
+            parsedImages = [];
+          }
+          
+          return {
+            ...eq,
+            equipmentImages: parsedImages
+          };
+        });
+        
+        console.log('Setting parsed equipment:', parsedEquipment);
+        setEquipment(parsedEquipment);
 
         // Pre-fill profile form
         setProfileForm({
@@ -373,45 +400,42 @@ const EquipmentDashboard = () => {
     }
   };
 
-  // Replace the handleUpdateProfile function in EquipmentDashboard.jsx with this:
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
 
-const handleUpdateProfile = async (e) => {
-  e.preventDefault();
+    try {
+      setSaving(true);
+      setError('');
 
-  try {
-    setSaving(true);
-    setError('');
+      const token = localStorage.getItem('token');
 
-    const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/api/equipment-owner/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileForm)
+      });
 
-    // Use the equipment profile route instead of generic user route
-    const response = await fetch(`${API_BASE}/api/equipment-owner/profile`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(profileForm)
-    });
+      const data = await response.json();
 
-    const data = await response.json();
-
-    if (data.success) {
-      setSuccess('Profile updated successfully!');
-      setTimeout(() => {
-        setShowProfileModal(false);
-        fetchProfile();
-      }, 1500);
-    } else {
-      setError(data.msg || 'Failed to update profile');
+      if (data.success) {
+        setSuccess('Profile updated successfully!');
+        setTimeout(() => {
+          setShowProfileModal(false);
+          fetchProfile();
+        }, 1500);
+      } else {
+        setError(data.msg || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Update profile error:', err);
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
     }
-  } catch (err) {
-    console.error('Update profile error:', err);
-    setError('Network error. Please try again.');
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -445,29 +469,28 @@ const handleUpdateProfile = async (e) => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-  <button
-    onClick={() => setShowProfileModal(true)}
-    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-  >
-    <Edit className="w-4 h-4" />
-    Edit Profile
-  </button>
-  <button
-    onClick={() => setShowReviewModal(true)}
-    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
-  >
-    <MessageCircle className="w-4 h-4" />
-    Reviews
-  </button>
-  <button
-    onClick={handleLogout}
-    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-  >
-    <LogOut className="w-4 h-4" />
-    Logout
-  </button>
-</div>
-
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Profile
+              </button>
+              <button
+                onClick={() => setShowReviewModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Reviews
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -527,12 +550,15 @@ const handleUpdateProfile = async (e) => {
                 <div key={eq.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border border-gray-100">
                   {/* Equipment Image */}
                   <div className="relative h-48 bg-gradient-to-br from-purple-100 to-indigo-100">
-                    {eq.equipmentImages && eq.equipmentImages.length > 0 ? (
+                    {eq.equipmentImages && Array.isArray(eq.equipmentImages) && eq.equipmentImages.length > 0 ? (
                       <img
-                        //src={typeof eq.equipmentImages[0] === 'string' ? eq.equipmentImages[0] : eq.equipmentImages[0].path}
                         src={eq.equipmentImages[0]}
                         alt={eq.equipmentName}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Failed to load image:', eq.equipmentImages[0]);
+                          e.target.style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -858,7 +884,6 @@ const handleUpdateProfile = async (e) => {
                       value={equipmentForm.equipmentName}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="e.g., Excavator CAT 320"
                       required
                     />
                   </div>
@@ -873,7 +898,6 @@ const handleUpdateProfile = async (e) => {
                       value={equipmentForm.equipmentType}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="e.g., Heavy Machinery"
                       required
                     />
                   </div>
@@ -903,7 +927,6 @@ const handleUpdateProfile = async (e) => {
                       value={equipmentForm.location}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Equipment location"
                     />
                   </div>
 
@@ -917,7 +940,6 @@ const handleUpdateProfile = async (e) => {
                       onChange={handleInputChange}
                       rows="3"
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                      placeholder="Additional details about the equipment..."
                     />
                   </div>
                 </div>
@@ -1001,7 +1023,7 @@ const handleUpdateProfile = async (e) => {
                     {equipmentForm.equipmentImages.map((img, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={img.path || img}
+                          src={typeof img === 'string' ? img : img.path || img}
                           alt={`Equipment ${index + 1}`}
                           className="w-full h-20 object-cover rounded-lg border-2 border-gray-200"
                         />
@@ -1185,14 +1207,14 @@ const handleUpdateProfile = async (e) => {
         </div>
       )}
 
-{showReviewModal && (
-  <ReviewSystem
-    isModal={true}
-    onClose={() => setShowReviewModal(false)}
-    currentUser={user}
-  />
-)}
-
+      {/* Review Modal */}
+      {showReviewModal && (
+        <ReviewSystem
+          isModal={true}
+          onClose={() => setShowReviewModal(false)}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 };

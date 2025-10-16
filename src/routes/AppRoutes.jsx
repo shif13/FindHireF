@@ -11,6 +11,7 @@ import RoleSelection from "../components/RoleSelection";
 import EquipmentDashboard from "../pages/EquipmentDashboard"; 
 import FreelancerDashboard from "../components/FreelancerDashboard";  
 import EquipSkillDashboard from "../components/EquipSkillDashboard";
+import Buff from "../components/Buff";
 
 
 export default function AppRoutes() {
@@ -29,6 +30,7 @@ export default function AppRoutes() {
         <Route path="/select-role" element={<RoleSelection />} />
         <Route path="/freelancer-dashboard" element={<FreelancerDashboard />} />
         <Route path="/equipskilldashboard" element={<EquipSkillDashboard />} />
+        <Route path="/buff" element={<Buff />} />
       </Routes>
     </Router>
   );

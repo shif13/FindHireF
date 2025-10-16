@@ -232,16 +232,17 @@ const Home = () => {
                 );
               })}
             </div>
+            
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleNavigation('/login')}
-                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-lg font-semibold transition-all duration-300"
+                className="border-2 border-gray-700 text-gray-800 hover:bg-gray-100 px-6 py-2 rounded-xl font-semibold transition-all duration-300"
               >
                 Log In
               </button>
               <button
                 onClick={() => handleNavigation('/signup')}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Sign Up
               </button>
@@ -364,8 +365,7 @@ const Home = () => {
             {featuredEquipment.map((equipment) => (
               <div key={`equipment-${equipment.id}`} className="flex flex-col items-center group">
                 <div className="relative w-20 h-20 mb-3">
-                  <img
-                    src={equipment.image || '/placeholder-equipment.jpg'}
+                  <img src={equipment.image || '/placeholder-equipment.jpg'}
                     alt={equipment.equipmentName}
                     className="w-full h-full rounded-full object-cover shadow-md group-hover:shadow-lg transition-shadow duration-300 ring-4 ring-purple-500"
                   />
@@ -598,6 +598,21 @@ const Home = () => {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Equipment Image */}
+              {selectedEquipment.equipmentImages && selectedEquipment.equipmentImages.length > 0 && (
+                <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={selectedEquipment.equipmentImages[0]}
+                    alt={selectedEquipment.equipmentName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/placeholder-equipment.jpg';
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Availability */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Availability</h3>

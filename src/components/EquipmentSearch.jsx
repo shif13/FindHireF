@@ -278,146 +278,161 @@ const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/equipment/
         )}
 
         {/* Equipment Grid */}
-        {!loading && !error && equipment.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {equipment.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                        {item.equipmentName}
-                      </h3>
-                      <p className="text-sm text-gray-600">{item.equipmentType}</p>
-                    </div>
-                    {getAvailabilityBadge(item.availability)}
-                  </div>
-
-                  {item.location && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                      <MapPin size={16} className="flex-shrink-0" />
-                      <span>{item.location}</span>
-                    </div>
-                  )}
-
-                  <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-                      <User size={16} className="text-gray-400" />
-                      <span className="font-medium">{item.contactPerson}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleViewDetails(item)}
-                    className="w-full mt-4 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
+       {/* Equipment Grid */}
+{!loading && !error && equipment.length > 0 && (
+  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {equipment.map((item) => (
+      <div key={item.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        {/* Equipment Image - FIXED */}
+        {item.equipmentImages && item.equipmentImages.length > 0 && (
+          <div className="relative h-48 bg-gray-100">
+            <img
+              src={item.equipmentImages[0]}
+              alt={item.equipmentName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.style.display = 'none';
+              }}
+            />
           </div>
         )}
+        
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                {item.equipmentName}
+              </h3>
+              <p className="text-sm text-gray-600">{item.equipmentType}</p>
+            </div>
+            {getAvailabilityBadge(item.availability)}
+          </div>
+
+          {item.location && (
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+              <MapPin size={16} className="flex-shrink-0" />
+              <span>{item.location}</span>
+            </div>
+          )}
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+              <User size={16} className="text-gray-400" />
+              <span className="font-medium">{item.contactPerson}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => handleViewDetails(item)}
+            className="w-full mt-4 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            View Details
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
       </div>
 
       {/* Details Modal */}
-      {showDetailsModal && selectedEquipment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b sticky top-0 bg-white flex items-start justify-between">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {selectedEquipment.equipmentName}
-                </h2>
-                <p className="text-gray-600">{selectedEquipment.equipmentType}</p>
-              </div>
-              <button
-                onClick={closeDetailsModal}
-                className="text-gray-400 hover:text-gray-600 ml-4 flex-shrink-0"
-              >
-                <X size={24} />
-              </button>
+     {/* Details Modal */}
+{showDetailsModal && selectedEquipment && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="p-6 border-b sticky top-0 bg-white flex items-start justify-between">
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {selectedEquipment.equipmentName}
+          </h2>
+          <p className="text-gray-600">{selectedEquipment.equipmentType}</p>
+        </div>
+        <button
+          onClick={closeDetailsModal}
+          className="text-gray-400 hover:text-gray-600 ml-4 flex-shrink-0"
+        >
+          <X size={24} />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Equipment Image - FIXED */}
+        {selectedEquipment.equipmentImages && selectedEquipment.equipmentImages.length > 0 && (
+          <div className="relative h-64 bg-gray-100 rounded-lg overflow-hidden">
+            <img
+              src={selectedEquipment.equipmentImages[0]}
+              alt={selectedEquipment.equipmentName}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/placeholder-equipment.jpg';
+              }}
+            />
+          </div>
+        )}
+
+        {/* Availability */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Availability</h3>
+          {getAvailabilityBadge(selectedEquipment.availability)}
+        </div>
+
+        {/* Location */}
+        {selectedEquipment.location && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Location</h3>
+            <div className="flex items-center gap-2 text-gray-800">
+              <MapPin size={18} className="text-gray-400" />
+              <span>{selectedEquipment.location}</span>
             </div>
+          </div>
+        )}
 
-            <div className="p-6 space-y-6">
-              {/* Availability */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Availability</h3>
-                {getAvailabilityBadge(selectedEquipment.availability)}
-              </div>
+        {/* Description */}
+        {selectedEquipment.description && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+            <p className="text-gray-700 leading-relaxed">{selectedEquipment.description}</p>
+          </div>
+        )}
 
-              {/* Location */}
-              {selectedEquipment.location && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Location</h3>
-                  <div className="flex items-center gap-2 text-gray-800">
-                    <MapPin size={18} className="text-gray-400" />
-                    <span>{selectedEquipment.location}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Contact Information */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Contact Information</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-800">
-                    <User size={18} className="text-gray-400" />
-                    <span>{selectedEquipment.contactPerson}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-800">
-                    <Phone size={18} className="text-gray-400" />
-                    <span>{selectedEquipment.contactNumber}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-800">
-                    <Mail size={18} className="text-gray-400" />
-                    <span>{selectedEquipment.contactEmail}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Equipment Condition Files */}
-              {selectedEquipment.equipmentConditionFiles && selectedEquipment.equipmentConditionFiles.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Equipment Condition Documents</h3>
-                  <div className="space-y-2">
-                    {selectedEquipment.equipmentConditionFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                        <FileText size={18} className="text-gray-400" />
-                        <span className="text-sm text-gray-700 flex-1">{file.originalName}</span>
-                        <a
-href={file.path.startsWith('http://') || file.path.startsWith('https://') 
-    ? file.path 
-    : `${import.meta.env.VITE_BACKEND_URL}/${file.path}`}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
->
-  View
-</a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Button */}
-              <div className="pt-4 border-t">
-                <button
-                  onClick={() => {
-                    closeDetailsModal();
-                    openContactModal(selectedEquipment);
-                  }}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Mail size={18} />
-                  Send Mail
-                </button>
-              </div>
+        {/* Contact Information */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Contact Information</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-gray-800">
+              <User size={18} className="text-gray-400" />
+              <span>{selectedEquipment.contactPerson}</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-800">
+              <Phone size={18} className="text-gray-400" />
+              <span>{selectedEquipment.contactNumber}</span>
+            </div>
+            <div className="flex items-center gap-3 text-gray-800">
+              <Mail size={18} className="text-gray-400" />
+              <span>{selectedEquipment.contactEmail}</span>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Action Button */}
+        <div className="pt-4 border-t">
+          <button
+            onClick={() => {
+              closeDetailsModal();
+              openContactModal(selectedEquipment);
+            }}
+            className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <Mail size={18} />
+            Send Inquiry
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Contact Modal */}
       {contactModal.show && contactModal.equipment && (
