@@ -320,8 +320,10 @@ const handleSubmit = async (e) => {
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Freelancer Dashboard</h1>
+               <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {user?.firstName ? `${user.firstName}'s Dashboard` : 'User Dashboard'}
+              </h1>
               <p className="text-sm text-gray-600">
                 {profile && profile.title ? `Welcome back, ${user?.firstName}` : 'Complete your profile to get started'}
               </p>
