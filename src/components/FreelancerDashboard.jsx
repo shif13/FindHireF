@@ -1,29 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   User, Save, X, Upload, FileText, Award, LogOut, 
-  AlertCircle, CheckCircle, MessageCircle, Loader, Download, Trash2
+  AlertCircle, CheckCircle, MessageCircle, Loader, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ReviewSystem from '../components/ReviewComponent';
-
-const handleDownloadFile = async (url, filename) => {
-  try {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-  } catch (error) {
-    console.error('Download failed:', error);
-    // Fallback: open in new tab
-    window.open(url, '_blank');
-  }
-};
 
 const FreelancerDashboard = () => {
   const [user, setUser] = useState(null);
@@ -34,27 +15,23 @@ const FreelancerDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
  
-
   const navigate = useNavigate();
-   const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
  
-   const [files, setFiles] = useState({
+  const [files, setFiles] = useState({
     cvFile: null,
     certificateFiles: []
   });
 
-  // Review Modal State
   const [showReviewModal, setShowReviewModal] = useState(false);
   
   const [formData, setFormData] = useState({
-    // From users table
     firstName: '',
     lastName: '',
     userName: '',
     email: '',
     phone: '',
     location: '',
-    // From job_seekers table
     title: '',
     experience: '',
     expectedSalary: '',
@@ -119,12 +96,10 @@ const FreelancerDashboard = () => {
         setUser(data.user);
         setProfile(data.profile);
 
-        // If profile doesn't exist, show form immediately
         if (!data.profile || !data.profile.title) {
           setIsEditing(true);
         }
 
-        // Pre-fill form data
         setFormData({
           firstName: data.user.firstName || '',
           lastName: data.user.lastName || '',
@@ -165,7 +140,6 @@ const FreelancerDashboard = () => {
     setSuccess('');
   };
 
- // Simple file change handler
   const handleCVUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -198,7 +172,6 @@ const FreelancerDashboard = () => {
       return;
     }
 
-    // Validate file types
     const invalidFiles = fileArray.filter(
       file => !['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'].includes(file.type)
     );
@@ -221,10 +194,11 @@ const FreelancerDashboard = () => {
     }));
   };
 
- const handleSubmit = async (e) => {
+ // Add this enhanced logging to your handleSubmit function in FreelancerDashboard.jsx
+
+const handleSubmit = async (e) => {
   e.preventDefault();
   
-  // Validation
   if (!formData.firstName || !formData.lastName || !formData.userName || !formData.email) {
     setError('Please fill all required fields');
     return;
@@ -241,39 +215,59 @@ const FreelancerDashboard = () => {
     setSuccess('');
 
     const token = localStorage.getItem('token');
-    
-    // Create FormData for file upload
     const formDataToSend = new FormData();
 
-    // Add all text fields
+    // Add all form fields
     Object.keys(formData).forEach(key => {
       if (key === 'certificatesPath') {
-        // Send existing certificates as JSON string
         formDataToSend.append('existingCertificates', JSON.stringify(formData[key]));
+        console.log('📜 Sending existing certificates:', formData[key]);
       } else if (formData[key] !== null && formData[key] !== undefined && formData[key] !== '') {
         formDataToSend.append(key, formData[key]);
       }
     });
 
-    // Add new CV file
+    // 🔍 DEBUG: Log file uploads
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('CV File:', files.cvFile);
+    console.log('Certificate Files:', files.certificateFiles);
+    console.log('Certificate Files Count:', files.certificateFiles?.length || 0);
+
+    // Add CV file
     if (files.cvFile) {
       formDataToSend.append('cvFile', files.cvFile);
+      console.log('✅ CV file appended to FormData:', files.cvFile.name);
+    } else {
+      console.log('ℹ️ No new CV file to upload');
     }
     
-    // Add new certificate files
-    if (files.certificateFiles.length > 0) {
-      files.certificateFiles.forEach(file => {
+    // Add certificate files
+    if (files.certificateFiles && files.certificateFiles.length > 0) {
+      console.log(`📦 Appending ${files.certificateFiles.length} certificate file(s)`);
+      files.certificateFiles.forEach((file, index) => {
         formDataToSend.append('certificateFiles', file);
+        console.log(`  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       });
+    } else {
+      console.log('ℹ️ No new certificate files to upload');
     }
 
-    console.log('📤 Submitting profile with files...');
+    // 🔍 DEBUG: Log all FormData entries
+    console.log('=== FORMDATA CONTENTS ===');
+    for (let [key, value] of formDataToSend.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, value.name, `(${(value.size / 1024).toFixed(2)} KB)`);
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
+    console.log('========================');
 
     const response = await fetch(`${API_BASE}/api/freelancer/profile`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`
-        // Don't set Content-Type - browser will set it with boundary for FormData
+        // DON'T set Content-Type - let browser set it with boundary
       },
       body: formDataToSend
     });
@@ -288,7 +282,6 @@ const FreelancerDashboard = () => {
       // Clear file inputs
       document.querySelectorAll('input[type="file"]').forEach(input => input.value = '');
       
-      // Refresh profile
       await fetchProfile();
     } else {
       setError(data.msg || 'Failed to save profile');
@@ -300,7 +293,6 @@ const FreelancerDashboard = () => {
     setSaving(false);
   }
 };
-
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -325,7 +317,6 @@ const FreelancerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -335,36 +326,35 @@ const FreelancerDashboard = () => {
                 {profile && profile.title ? `Welcome back, ${user?.firstName}` : 'Complete your profile to get started'}
               </p>
             </div>
-          <div className="flex items-center gap-3">
-  {profile && profile.title && !isEditing && (
-    <button
-      onClick={() => setIsEditing(true)}
-      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-    >
-      Edit Profile
-    </button>
-  )}
-  <button
-    onClick={() => setShowReviewModal(true)}
-    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
-  >
-    <MessageCircle className="w-4 h-4" />
-    Reviews
-  </button>
-  <button
-    onClick={handleLogout}
-    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-  >
-    <LogOut className="w-4 h-4" />
-    Logout
-  </button>
-</div>
+            <div className="flex items-center gap-3">
+              {profile && profile.title && !isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  Edit Profile
+                </button>
+              )}
+              <button
+                onClick={() => setShowReviewModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Reviews
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Messages */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -379,7 +369,6 @@ const FreelancerDashboard = () => {
           </div>
         )}
 
-        {/* Form or View Mode */}
         {isEditing ? (
           <div className="bg-white rounded-lg shadow p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -387,7 +376,6 @@ const FreelancerDashboard = () => {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Basic Information</h3>
                 <div className="grid md:grid-cols-2 gap-6">
@@ -473,7 +461,6 @@ const FreelancerDashboard = () => {
                 </div>
               </div>
 
-              {/* Professional Information */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Professional Information</h3>
                 <div className="grid md:grid-cols-2 gap-6">
@@ -597,129 +584,113 @@ const FreelancerDashboard = () => {
                 </div>
               </div>
 
-              {/* Upload Documents Section */}
-<div>
-  <h3 className="text-lg font-semibold mb-4 text-gray-800">Upload Documents</h3>
-  <div className="grid md:grid-cols-2 gap-6">
-    {/* CV Upload */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Resume/CV (PDF, max 5MB)
-      </label>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
-        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={handleCVUpload}
-          className="hidden"
-          id="cv-upload"
-        />
-        <label htmlFor="cv-upload" className="cursor-pointer">
-          <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-            Click to upload CV
-          </span>
-        </label>
-        
-        {/* Show selected file */}
-        {files.cvFile && (
-          <div className="mt-2 p-2 bg-blue-50 rounded">
-            <p className="text-xs text-blue-700 flex items-center justify-center gap-2">
-              <FileText className="w-4 h-4" />
-              {files.cvFile.name} ({(files.cvFile.size / 1024 / 1024).toFixed(2)} MB)
-            </p>
-          </div>
-        )}
-        
-        {/* Show existing CV */}
-        {formData.cvFilePath && !files.cvFile && (
-          <div className="mt-2 flex items-center justify-center gap-2">
-            <FileText className="w-4 h-4 text-green-600" />
-            <a 
-              href={formData.cvFilePath} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-green-600 hover:underline"
-            >
-              Current CV uploaded
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Upload Documents</h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Resume/CV (PDF, max 5MB)
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleCVUpload}
+                        className="hidden"
+                        id="cv-upload"
+                      />
+                      <label htmlFor="cv-upload" className="cursor-pointer">
+                        <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          Click to upload CV
+                        </span>
+                      </label>
+                      
+                      {files.cvFile && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded">
+                          <p className="text-xs text-blue-700 flex items-center justify-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            {files.cvFile.name} ({(files.cvFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </p>
+                        </div>
+                      )}
+                      
+                      {formData.cvFilePath && !files.cvFile && (
+                        <div className="mt-2 flex items-center justify-center gap-2">
+                          <FileText className="w-4 h-4 text-green-600" />
+                          <span className="text-xs text-green-600">Current CV uploaded</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-    {/* Certificates Upload */}
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        Certificates (PDF/Images, max 10MB total)
-      </label>
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
-        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          multiple
-          onChange={handleCertificatesUpload}
-          className="hidden"
-          id="cert-upload"
-        />
-        <label htmlFor="cert-upload" className="cursor-pointer">
-          <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-            Click to upload certificates
-          </span>
-        </label>
-        
-        {/* Show selected files */}
-        {files.certificateFiles.length > 0 && (
-          <div className="mt-2 p-2 bg-blue-50 rounded">
-            <p className="text-xs text-blue-700">
-              {files.certificateFiles.length} new certificate(s) selected
-            </p>
-          </div>
-        )}
-        
-        {/* Show existing certificates count */}
-        {formData.certificatesPath.length > 0 && files.certificateFiles.length === 0 && (
-          <div className="mt-2">
-            <span className="text-xs text-green-600">
-              {formData.certificatesPath.length} certificate(s) already uploaded
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Certificates (PDF/Images, max 10MB total)
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        multiple
+                        onChange={handleCertificatesUpload}
+                        className="hidden"
+                        id="cert-upload"
+                      />
+                      <label htmlFor="cert-upload" className="cursor-pointer">
+                        <span className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          Click to upload certificates
+                        </span>
+                      </label>
+                      
+                      {files.certificateFiles.length > 0 && (
+                        <div className="mt-2 p-2 bg-blue-50 rounded">
+                          <p className="text-xs text-blue-700">
+                            {files.certificateFiles.length} new certificate(s) selected
+                          </p>
+                        </div>
+                      )}
+                      
+                      {formData.certificatesPath.length > 0 && files.certificateFiles.length === 0 && (
+                        <div className="mt-2">
+                          <span className="text-xs text-green-600">
+                            {formData.certificatesPath.length} certificate(s) already uploaded
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-  {/* Show uploaded certificates with delete option */}
-  {formData.certificatesPath.length > 0 && (
-    <div className="mt-4 space-y-2">
-      <p className="text-sm font-medium text-gray-700">Uploaded Certificates:</p>
-      <div className="grid grid-cols-2 gap-2">
-        {formData.certificatesPath.map((cert, index) => (
-          <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
-            <a 
-              href={cert} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:underline truncate flex-1"
-            >
-              Certificate {index + 1}
-            </a>
-            <button
-              type="button"
-              onClick={() => handleDeleteCertificate(index)}
-              className="text-red-600 hover:text-red-700 ml-2"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )}
-</div>
+                {formData.certificatesPath.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Uploaded Certificates:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {formData.certificatesPath.map((cert, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border">
+                          <a 
+                            href={`${API_BASE}/${cert}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline truncate flex-1"
+                          >
+                            Certificate {index + 1}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCertificate(index)}
+                            className="text-red-600 hover:text-red-700 ml-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
@@ -746,7 +717,6 @@ const FreelancerDashboard = () => {
             </form>
           </div>
         ) : (
-          /* View Mode */
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-lg shadow p-6">
@@ -825,81 +795,62 @@ const FreelancerDashboard = () => {
               </div>
             </div>
 
-            {/* Sidebar - Documents */}
-            
-<div className="space-y-6">
-  <div className="bg-white rounded-lg shadow p-6">
-    <h3 className="text-lg font-semibold mb-4">Documents</h3>
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-500 mb-2">CV/Resume</label>
-        {formData.cvFilePath ? (
-          <div className="flex gap-2">
-            <a 
-              href={formData.cvFilePath}
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex-1 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
-            >
-              <FileText className="w-5 h-5 text-blue-600" />
-              <span className="text-blue-700 font-medium text-sm">View CV</span>
-            </a>
-            <button
-              onClick={() => handleDownloadFile(formData.cvFilePath, 'CV.pdf')}
-              className="px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              title="Download CV"
-            >
-              <Download className="w-5 h-5" />
-            </button>
-          </div>
-        ) : (
-          <p className="text-gray-400 italic p-3 bg-gray-50 rounded text-sm">No CV uploaded</p>
-        )}
-      </div>
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4">Documents</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-2">CV/Resume</label>
+                    {formData.cvFilePath ? (
+                      <a 
+                        href={`${API_BASE}/${formData.cvFilePath}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                      >
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <span className="text-blue-700 font-medium text-sm">View CV</span>
+                      </a>
+                    ) : (
+                      <p className="text-gray-400 italic p-3 bg-gray-50 rounded text-sm">No CV uploaded</p>
+                    )}
+                  </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-500 mb-2">Certificates</label>
-        {formData.certificatesPath.length > 0 ? (
-          <div className="space-y-2">
-            {formData.certificatesPath.map((cert, index) => (
-              <div key={index} className="flex gap-2">
-                <a 
-                  href={cert}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors"
-                >
-                  <Award className="w-5 h-5 text-green-600" />
-                  <span className="text-green-700 font-medium text-sm">Certificate {index + 1}</span>
-                </a>
-                <button
-                  onClick={() => handleDownloadFile(cert, `Certificate_${index + 1}.pdf`)}
-                  className="px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  title="Download Certificate"
-                >
-                  <Download className="w-5 h-5" />
-                </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-2">Certificates</label>
+                    {formData.certificatesPath.length > 0 ? (
+                      <div className="space-y-2">
+                        {formData.certificatesPath.map((cert, index) => (
+                          <a
+                            key={index}
+                            href={`${API_BASE}/${cert}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors"
+                          >
+                            <Award className="w-5 h-5 text-green-600" />
+                            <span className="text-green-700 font-medium text-sm">Certificate {index + 1}</span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic p-3 bg-gray-50 rounded text-sm">No certificates uploaded</p>
+                    )}
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-400 italic p-3 bg-gray-50 rounded text-sm">No certificates uploaded</p>
-        )}
-      </div>
-    </div>
-  </div>
-</div>
+            </div>
           </div>
         )}
       </div>
 
       {showReviewModal && (
-  <ReviewSystem 
-    isModal={true}
-    onClose={() => setShowReviewModal(false)}
-    currentUser={user}
-  />
-)}
+        <ReviewSystem 
+          isModal={true}
+          onClose={() => setShowReviewModal(false)}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 };

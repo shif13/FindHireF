@@ -99,19 +99,20 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setMessage({ type: 'success', text: 'Account created successfully! Redirecting to role selection...' });
-        
-        // Store token
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
+  setMessage({ type: 'success', text: 'Account created successfully! Redirecting...' });
+  setLoading(false); // Clear loading state first
+  
+  // Store token
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+  }
 
-        // Redirect to role selection page after 1.5 seconds
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1500);
-      } else {
+  // Redirect after brief delay
+  setTimeout(() => {
+    window.location.href = '/login';
+  }, 800);
+}else {
         setMessage({ type: 'error', text: data.msg || 'Registration failed. Please try again.' });
       }
     } catch (error) {
