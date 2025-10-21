@@ -7,7 +7,7 @@ const LandingPage = () => {
   };
 
   const handleFreelancersClick = () => {
-     window.location.href = '/recruiter';
+     window.location.href = '/manpower-finder';
   }
 
   const handleEquipmentClick = () => {
@@ -19,21 +19,7 @@ const freelancerImage = "https://images.unsplash.com/photo-1522202176988-66273c2
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <button 
-              className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 px-4 py-2 rounded-lg border border-gray-300 bg-white transition-colors duration-200" 
-              onClick={handleHomeClick}
-            >
-              <Home size={18} />
-              <span className="font-medium">Home</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
+    
       {/* Main Content - Centered */}
       <main className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-6xl">

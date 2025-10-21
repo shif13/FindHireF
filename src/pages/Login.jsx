@@ -1,49 +1,80 @@
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, X, CheckCircle, AlertCircle, Home as HomeIcon, Users, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import videoFile from '../assets/videos/video2.mp4';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, Eye, EyeOff, Search, ArrowLeft, X, CheckCircle, AlertCircle, Key } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    usernameOrEmail: '',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   
   // Forgot Password Modal State
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotMessage, setForgotMessage] = useState('');
-  
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+
   // Reset Password Modal State
   const [showResetModal, setShowResetModal] = useState(false);
+  const [resetToken, setResetToken] = useState('');
   const [resetData, setResetData] = useState({
-    token: '',
-    newPassword: '',
+    password: '',
     confirmPassword: ''
   });
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState(0);
-  
-  const navigate = useNavigate();
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [verifyingToken, setVerifyingToken] = useState(false);
+  const [tokenValid, setTokenValid] = useState(false);
 
-  const calculatePasswordStrength = (password) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    return strength;
+  const API_BASE = 'http://localhost:5550/api';
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberEmail');
+    if (rememberedEmail) {
+      setFormData(prev => ({ ...prev, email: rememberedEmail }));
+      setRememberMe(true);
+    }
+
+    // Check if URL contains reset token
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      setResetToken(token);
+      verifyResetToken(token);
+    }
+  }, []);
+
+  const verifyResetToken = async (token) => {
+    setVerifyingToken(true);
+    setShowResetModal(true);
+    
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify-reset-token/${token}`);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setTokenValid(true);
+      } else {
+        setResetError(data.message || 'Invalid or expired reset token');
+        setTokenValid(false);
+      }
+    } catch (error) {
+      console.error('Token verification error:', error);
+      setResetError('Failed to verify reset token');
+      setTokenValid(false);
+    } finally {
+      setVerifyingToken(false);
+    }
   };
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -52,25 +83,20 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleResetInputChange = (e) => {
+  const handleResetDataChange = (e) => {
     const { name, value } = e.target;
     setResetData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    if (name === 'newPassword') {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
-    
     if (resetError) setResetError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    if (!formData.usernameOrEmail || !formData.password) {
+    
+    if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
       return;
     }
@@ -78,42 +104,36 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/login`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        
-        console.log('Login successful. User data:', data.user);
+        localStorage.setItem('userId', data.user.id);
+        localStorage.setItem('user', JSON.stringify(data.user));
 
-        if (!data.user.rolesSelected) {
-          console.log('Redirecting to role selection...');
-          navigate('/select-role');
+        if (rememberMe) {
+          localStorage.setItem('rememberEmail', formData.email);
         } else {
-          if (data.user.isFreelancer && !data.user.isEquipmentOwner) {
-            console.log('Redirecting to freelancer dashboard...');
-            navigate('/freelancer-dashboard');
-          } else if (data.user.isEquipmentOwner && !data.user.isFreelancer) {
-            console.log('Redirecting to equipment dashboard...');
-            navigate('/equipmentdashboard');
-          } else if (data.user.isFreelancer && data.user.isEquipmentOwner) {
-            console.log('User has both roles, redirecting to combined dashboard...');
-            navigate('/equipskilldashboard');
-          } else {
-            console.warn('User has rolesSelected=true but no roles! Redirecting to role selection...');
-            navigate('/select-role');
-          }
+          localStorage.removeItem('rememberEmail');
+        }
+
+        if (data.user.user_type === 'manpower') {
+          window.location.href = '/manpowerdashboard';
+        } else if (data.user.user_type === 'equipment_owner') {
+          window.location.href = '/equipmentdashboard';
+        } else if (data.user.user_type === 'both') {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/';
         }
       } else {
-        setError(data.msg || 'Login failed');
+        setError(data.message || 'Login failed');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -125,46 +145,33 @@ const Login = () => {
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    setForgotMessage('');
-    
-    if (!forgotEmail) {
-      setForgotMessage('Please enter your email address');
-      return;
-    }
+    setForgotError('');
+    setForgotSuccess(false);
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(forgotEmail)) {
-      setForgotMessage('Please enter a valid email address');
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address');
       return;
     }
 
     setForgotLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/forgot-password`, {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: forgotEmail }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setForgotMessage('Password reset instructions have been sent to your email! Check your inbox for a 6-digit reset code.');
-        setTimeout(() => {
-          setShowForgotModal(false);
-          setForgotEmail('');
-          setForgotMessage('');
-          setShowResetModal(true);
-        }, 3000);
+        setForgotSuccess(true);
       } else {
-        setForgotMessage(data.msg || 'Failed to send password reset email');
+        setForgotError(data.message || 'Failed to send reset email');
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      setForgotMessage('Network error. Please try again.');
+      setForgotError('Network error. Please try again.');
     } finally {
       setForgotLoading(false);
     }
@@ -174,48 +181,46 @@ const Login = () => {
     e.preventDefault();
     setResetError('');
 
-    if (!resetData.token || !resetData.newPassword || !resetData.confirmPassword) {
+    if (!resetData.password || !resetData.confirmPassword) {
       setResetError('Please fill in all fields');
       return;
     }
 
-    if (resetData.token.length !== 6 || !/^\d{6}$/.test(resetData.token)) {
-      setResetError('Please enter a valid 6-digit reset code');
-      return;
-    }
-
-    if (resetData.newPassword.length < 6) {
-      setResetError('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (resetData.newPassword !== resetData.confirmPassword) {
+    if (resetData.password !== resetData.confirmPassword) {
       setResetError('Passwords do not match');
+      return;
+    }
+
+    if (resetData.password.length < 6) {
+      setResetError('Password must be at least 6 characters long');
       return;
     }
 
     setResetLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/login/reset-password`, {
+      const response = await fetch(`${API_BASE}/auth/reset-password/${resetToken}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: resetData.token,
-          newPassword: resetData.newPassword
-        }),
+          password: resetData.password,
+          confirmPassword: resetData.confirmPassword
+        })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert('Password reset successful! You can now log in with your new password.');
-        setShowResetModal(false);
-        setResetData({ token: '', newPassword: '', confirmPassword: '' });
+        setResetSuccess(true);
+        setTimeout(() => {
+          setShowResetModal(false);
+          setResetData({ password: '', confirmPassword: '' });
+          setResetSuccess(false);
+          // Remove token from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }, 3000);
       } else {
-        setResetError(data.msg || 'Failed to reset password');
+        setResetError(data.message || 'Failed to reset password');
       }
     } catch (error) {
       console.error('Reset password error:', error);
@@ -225,160 +230,123 @@ const Login = () => {
     }
   };
 
-  const openForgotModal = () => {
-    setShowForgotModal(true);
-    setForgotEmail(formData.usernameOrEmail.includes('@') ? formData.usernameOrEmail : '');
-    setForgotMessage('');
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      const form = e.target.closest('form');
+      if (!form) return;
+      
+      const focusableElements = form.querySelectorAll(
+        'input[type="email"], input[type="password"], input[type="text"], button[type="submit"]'
+      );
+      const focusableArray = Array.from(focusableElements);
+      const currentIndex = focusableArray.indexOf(e.target);
+      
+      if (currentIndex < focusableArray.length - 1) {
+        focusableArray[currentIndex + 1].focus();
+      } else {
+        form.querySelector('button[type="submit"]').click();
+      }
+    }
   };
-
-  const closeForgotModal = () => {
-    setShowForgotModal(false);
-    setForgotEmail('');
-    setForgotMessage('');
-  };
-
-  const closeResetModal = () => {
-    setShowResetModal(false);
-    setResetData({ token: '', newPassword: '', confirmPassword: '' });
-    setResetError('');
-  };
-
-  const handleNavigation = (path) => {
-    navigate(path);
-  };
-
-  const navItems = [
-    { id: 'home', label: 'Home', icon: HomeIcon, path: '/' },
-    { id: 'equipment', label: 'Find Equipment', icon: Search, path: '/equipment' },
-    { id: 'manpower', label: 'Find Manpower', icon: Users, path: '/recruiter' }
-  ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col">
-      {/* Navigation Bar */}
-      <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = false;
-                
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigation(item.path)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-gray-100 text-gray-900 font-medium border-b-2 border-blue-500'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span className="hidden sm:inline text-sm font-medium">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-3">
-             
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col">
+      <header className="bg-white border-b border-gray-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <a href="/" className="flex items-center gap-2">
+              <Search className="w-8 h-8 text-teal-600" />
+              <span className="text-xl font-bold text-gray-900">find-hire.co</span>
+            </a>
+            <a 
+              href="/"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </a>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Video Background */}
-      <div className="absolute inset-0 z-0">
-        <video
-          className="w-full h-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-        >
-          <source src={videoFile} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-      </div>
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Welcome Back
+              </h1>
+              <p className="text-gray-600">
+                Log in to your Find-Hire account
+              </p>
+            </div>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 relative z-10">
-        <div className="max-w-md w-full space-y-8">
-          {/* Header */}
-          <div className="text-center">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent mb-4 drop-shadow-lg">
-              Welcome Back
-            </h1>
-            <p className="text-white text-lg drop-shadow-md">Sign in to your ProFetch account</p>
-          </div>
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
 
-          {/* Login Form */}
-          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
               <div>
-                <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                  Username or Email
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    id="usernameOrEmail"
-                    name="usernameOrEmail"
-                    type="text"
-                    value={formData.usernameOrEmail}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your username or email"
-                    required
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="m@example.com"
+                    autoComplete="email"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    id="password"
+                    type={showPassword ? "text" : "password"}
                     name="password"
-                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your password"
-                    required
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-
               <div className="flex items-center justify-between">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                   />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  <span className="ml-2 text-sm text-gray-700">Remember me</span>
                 </label>
-                <button
+                <button 
                   type="button"
-                  onClick={openForgotModal}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-sm text-teal-600 hover:text-teal-700 font-medium"
                 >
                   Forgot password?
                 </button>
@@ -387,282 +355,342 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                className={`w-full py-3 px-6 rounded-lg font-medium transition-all duration-200 ${
                   loading
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg transform hover:-translate-y-0.5'
+                    : 'bg-teal-600 hover:bg-teal-700 text-white shadow-md hover:shadow-lg'
                 }`}
               >
-                {loading ? 'Signing In...' : 'Sign In'}
+                {loading ? 'Logging in...' : 'Log in'}
               </button>
-            </form>
 
-            <div className="mt-8">
-              <div className="relative">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
+                  <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
+                  <span className="px-4 bg-white text-gray-500">Don't have an account?</span>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('/signup')}
-                  className="w-full py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 hover:border-gray-400"
-                >
-                  Create New Account
-                </button>
-              </div>
-            </div>
+              <a
+                href="/signup"
+                className="block w-full py-3 px-6 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 text-center"
+              >
+                Create an account
+              </a>
+            </form>
+          </div>
+
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>
+              By continuing, you agree to our{' '}
+              <a href="/terms" className="text-teal-600 hover:text-teal-700">
+                Terms of Service
+              </a>{' '}
+              and{' '}
+              <a href="/privacy" className="text-teal-600 hover:text-teal-700">
+                Privacy Policy
+              </a>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Forgot Password Modal */}
+      {/* Forgot Password Modal (Step 1: Request Reset Email) */}
       {showForgotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
             <button
-              onClick={closeForgotModal}
+              onClick={() => {
+                setShowForgotModal(false);
+                setForgotEmail('');
+                setForgotError('');
+                setForgotSuccess(false);
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
 
             <div className="text-center mb-6">
-              <div className="bg-blue-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Mail className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-8 h-8 text-teal-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
-              <p className="text-gray-600">Enter your email address and we'll send you a 6-digit reset code.</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Forgot Password?
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Enter your email and we'll send you a reset link
+              </p>
             </div>
 
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div>
-                <label htmlFor="forgotEmail" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    id="forgotEmail"
-                    type="email"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter your email address"
-                    required
-                  />
-                </div>
-              </div>
-
-              {forgotMessage && (
-                <div className={`px-4 py-3 rounded-lg flex items-center ${
-                  forgotMessage.includes('sent') || forgotMessage.includes('successful')
-                    ? 'bg-green-50 border border-green-200 text-green-700'
-                    : 'bg-red-50 border border-red-200 text-red-700'
-                }`}>
-                  {forgotMessage.includes('sent') || forgotMessage.includes('successful') ? (
-                    <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                  )}
-                  <span className="text-sm">{forgotMessage}</span>
-                </div>
-              )}
-
-              <div className="flex space-x-3 pt-4">
+            {forgotSuccess ? (
+              <div className="text-center py-6">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Email Sent!
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Check your inbox for the password reset link
+                </p>
                 <button
-                  type="button"
-                  onClick={closeForgotModal}
-                  className="flex-1 py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200"
+                  onClick={() => {
+                    setShowForgotModal(false);
+                    setForgotEmail('');
+                    setForgotSuccess(false);
+                  }}
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors"
                 >
-                  Cancel
+                  Close
                 </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                {forgotError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{forgotError}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="m@example.com"
+                      required
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className={`flex-1 py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                  className={`w-full py-3 rounded-lg font-medium transition-all duration-200 ${
                     forgotLoading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-teal-600 hover:bg-teal-700 text-white shadow-md hover:shadow-lg'
                   }`}
                 >
-                  {forgotLoading ? 'Sending...' : 'Send Reset Code'}
+                  {forgotLoading ? 'Sending...' : 'Send Reset Link'}
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* Reset Password Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
-            <button
-              onClick={closeResetModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
-            <div className="text-center mb-6">
-              <div className="bg-green-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Lock className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h2>
-              <p className="text-gray-600">Enter the 6-digit code from your email and create a new password.</p>
-            </div>
-
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reset Code
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    name="token"
-                    type="text"
-                    value={resetData.token}
-                    onChange={handleResetInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-center text-lg tracking-widest font-mono"
-                    placeholder="000000"
-                    maxLength={6}
-                    pattern="[0-9]{6}"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Enter the 6-digit code from your email</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    name="newPassword"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={resetData.newPassword}
-                    onChange={handleResetInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter new password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-
-                {resetData.newPassword && (
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-600">Password Strength:</span>
-                      <span className={`text-xs font-medium ${
-                        passwordStrength <= 2 ? 'text-red-500' : 
-                        passwordStrength <= 3 ? 'text-yellow-500' : 
-                        'text-green-500'
-                      }`}>
-                        {passwordStrength <= 1 ? 'Weak' : passwordStrength <= 3 ? 'Fair' : 'Strong'}
-                      </span>
-                    </div>
-                    <div className="flex space-x-1">
-                      {[1, 2, 3, 4, 5].map((level) => (
-                        <div
-                          key={level}
-                          className={`h-1 flex-1 rounded-full ${
-                            level <= passwordStrength 
-                              ? passwordStrength <= 2 ? 'bg-red-500' : passwordStrength <= 3 ? 'bg-yellow-500' : 'bg-green-500'
-                              : 'bg-gray-200'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={resetData.confirmPassword}
-                    onChange={handleResetInputChange}
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Confirm new password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-
-                {resetData.newPassword && resetData.confirmPassword && (
-                  <div className="mt-1 flex items-center">
-                    {resetData.newPassword === resetData.confirmPassword ? (
-                      <div className="flex items-center text-green-600 text-xs">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Passwords match
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-red-600 text-xs">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Passwords do not match
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {resetError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {resetError}
-                </div>
-              )}
-
-              <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={closeResetModal}
-                  className="flex-1 py-3 px-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200"
+                  onClick={() => {
+                    setShowForgotModal(false);
+                    setForgotEmail('');
+                    setForgotError('');
+                  }}
+                  className="w-full py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={resetLoading}
-                  className={`flex-1 py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
-                    resetLoading
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700'
-                  }`}
-                >
-                  {resetLoading ? 'Resetting...' : 'Reset Password'}
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
       )}
+
+      {/* Reset Password Modal (Step 2: Enter New Password) */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
+            {!verifyingToken && !resetSuccess && (
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  setResetData({ password: '', confirmPassword: '' });
+                  setResetError('');
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
+
+            <div className="text-center mb-6">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                verifyingToken ? 'bg-gray-100' :
+                resetSuccess ? 'bg-green-100' :
+                !tokenValid && !verifyingToken ? 'bg-red-100' :
+                'bg-teal-100'
+              }`}>
+                {verifyingToken ? (
+                  <div className="w-8 h-8 border-4 border-gray-300 border-t-teal-600 rounded-full animate-spin"></div>
+                ) : resetSuccess ? (
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                ) : !tokenValid ? (
+                  <AlertCircle className="w-8 h-8 text-red-600" />
+                ) : (
+                  <Key className="w-8 h-8 text-teal-600" />
+                )}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                {verifyingToken ? 'Verifying...' :
+                 resetSuccess ? 'Password Reset!' :
+                 !tokenValid ? 'Invalid Token' :
+                 'Reset Your Password'}
+              </h2>
+              <p className="text-gray-600 text-sm">
+                {verifyingToken ? 'Please wait while we verify your reset token' :
+                 resetSuccess ? 'Your password has been changed successfully' :
+                 !tokenValid ? 'This reset link is invalid or has expired' :
+                 'Enter your new password below'}
+              </p>
+            </div>
+
+            {verifyingToken ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-4 border-gray-200 border-t-teal-600 rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : resetSuccess ? (
+              <div className="text-center py-4">
+                <p className="text-gray-600 text-sm mb-4">
+                  You can now log in with your new password
+                </p>
+                <button
+                  onClick={() => {
+                    setShowResetModal(false);
+                    setResetData({ password: '', confirmPassword: '' });
+                    setResetSuccess(false);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                  }}
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Go to Login
+                </button>
+              </div>
+            ) : !tokenValid ? (
+              <div className="text-center py-4">
+                <p className="text-gray-600 text-sm mb-4">
+                  Please request a new password reset link
+                </p>
+                <button
+                  onClick={() => {
+                    setShowResetModal(false);
+                    setShowForgotModal(true);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                  }}
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Request New Link
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                {resetError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-600 text-sm">{resetError}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showResetPassword ? "text" : "password"}
+                      name="password"
+                      value={resetData.password}
+                      onChange={handleResetDataChange}
+                      placeholder="••••••••"
+                      required
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showResetPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type={showResetConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      value={resetData.confirmPassword}
+                      onChange={handleResetDataChange}
+                      placeholder="••••••••"
+                      required
+                      className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showResetConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    • Password must be at least 6 characters long<br/>
+                    • Both passwords must match
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className={`w-full py-3 rounded-lg font-medium transition-all duration-200 ${
+                    resetLoading
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-teal-600 hover:bg-teal-700 text-white shadow-md hover:shadow-lg'
+                  }`}
+                >
+                  {resetLoading ? 'Resetting Password...' : 'Reset Password'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      <footer className="bg-white border-t border-gray-200 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center text-sm text-gray-500">
+            © 2025 Find-Hire.Co. All rights reserved.
+          </div>
+        </div>
+      </footer>
+
+      <style>{`
+        @keyframes scale-in {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
