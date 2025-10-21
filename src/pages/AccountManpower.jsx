@@ -164,10 +164,12 @@ const AccountManpower = () => {
       
       const startTime = Date.now();
       
-      const response = await fetch('http://localhost:5550/api/manpower/signup', {
-        method: 'POST',
-        body: formDataToSend
-      });
+      const API_BASE = import.meta.env.VITE_BACKEND_URL;
+const response = await fetch(`${API_BASE}/api/manpower/signup`, {
+  method: 'POST',
+  body: formDataToSend
+});
+
 
       const duration = Date.now() - startTime;
       console.log(`✅ Response received in ${duration}ms`);

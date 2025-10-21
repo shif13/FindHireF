@@ -33,7 +33,7 @@ const Login = () => {
   const [verifyingToken, setVerifyingToken] = useState(false);
   const [tokenValid, setTokenValid] = useState(false);
 
-  const API_BASE = 'http://localhost:5550/api';
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberEmail');

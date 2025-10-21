@@ -19,7 +19,7 @@ const AccountEquipment = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const API_BASE = 'http://localhost:5550/api';
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
   const handleChange = (e) => {
     const { name, value } = e.target;

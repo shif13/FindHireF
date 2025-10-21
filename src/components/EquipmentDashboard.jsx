@@ -43,7 +43,7 @@ const EquipmentDashboard = () => {
     profilePhoto: null
   });
 
-  const API_BASE = 'http://localhost:5550/api';
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
   // Fetch profile and equipment on mount
   useEffect(() => {
