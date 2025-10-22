@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Trash2, Upload, X, User, Phone, Mail, MapPin, Building2, AlertCircle, LogOut, Settings, Camera, ToggleRight, ToggleLeft, Search, Bell } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Upload, X,MessageSquare,  User, Phone, Mail, MapPin, Building2, AlertCircle, LogOut, Settings, Camera, ToggleRight, ToggleLeft, Search, Bell } from 'lucide-react';
 import { uploadMultipleToCloudinary } from '../utils/cloudinaryHelper';
-
+import ReviewSystem from '../components/ReviewComponent';
 
 const EquipmentDashboard = () => {
   const [profile, setProfile] = useState(null);
@@ -18,6 +18,10 @@ const EquipmentDashboard = () => {
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
   
+
+  // Review Modal State
+  const [showReviews, setShowReviews] = useState(false);
+
   // Form states
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -380,6 +384,18 @@ const handleImageUpload = async (e) => {
               >
                 <Settings className="w-5 h-5" style={{ color: '#7F5539' }} />
               </button>
+
+              <button
+  onClick={() => setShowReviews(true)}
+  className="flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors"
+  style={{ backgroundColor: '#B08968' }}
+  onMouseEnter={(e) => e.target.style.backgroundColor = '#7F5539'}
+  onMouseLeave={(e) => e.target.style.backgroundColor = '#B08968'}
+>
+  <MessageSquare className="w-4 h-4" />
+  Reviews
+</button>
+
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-white transition-colors"
@@ -1218,7 +1234,20 @@ const handleImageUpload = async (e) => {
           </div>
         </div>
       )}
+      {/* Review System Modal */}
+{showReviews && (
+  <ReviewSystem
+    isModal={true}
+    onClose={() => setShowReviews(false)}
+    currentUser={{
+      id: profile?.id,
+      firstName: profile?.name?.split(' ')[0] || '',
+      lastName: profile?.name?.split(' ')[1] || ''
+    }}
+  />
+)}
     </div>
+    
   );
 };
 

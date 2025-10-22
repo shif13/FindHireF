@@ -28,11 +28,11 @@ const SignUp = () => {
     }
   ];
 
-  const handleContinue = () => {
-    if (selectedRole) {
-      window.location.href = `/signup/${selectedRole}`;
-    }
-  };
+   const handleContinue = () => {
+  if (selectedRole) {
+    window.location.href = `/signup/${selectedRole}`; 
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col">

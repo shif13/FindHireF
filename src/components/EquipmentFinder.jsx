@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Package, Phone, User, Filter, X, Menu, Home, Briefcase } from 'lucide-react';
+import { Search, MapPin, Package, Phone, User, Filter, X, Menu, Home, Briefcase, Mail, Building2, MessageCircle } from 'lucide-react';
 
 const EquipmentFinder = () => {
   const [equipment, setEquipment] = useState([]);
@@ -11,6 +11,28 @@ const EquipmentFinder = () => {
   const [stats, setStats] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [profileModal, setProfileModal] = useState({ 
+  open: false, 
+  userId: null, 
+  data: null, 
+  loading: false, 
+  equipment: null  // ← ADD equipment field
+});
+
+const [inquiryModal, setInquiryModal] = useState({ 
+  open: false, 
+  equipmentId: null, 
+  ownerEmail: null, 
+  equipmentName: null 
+});
+
+const [inquiryForm, setInquiryForm] = useState({
+  name: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: ''
+});
   const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
   useEffect(() => {
@@ -48,6 +70,91 @@ const EquipmentFinder = () => {
       console.error('Stats error:', error);
     }
   };
+
+  const fetchOwnerProfile = async (userId, equipmentItem) => {
+  try {
+    setProfileModal(prev => ({ 
+      ...prev, 
+      loading: true, 
+      open: true, 
+      equipment: equipmentItem  // ← Pass equipment data
+    }));
+    
+    const response = await fetch(`${API_BASE}/equipment-search/owner-profile/${userId}`);
+    const data = await response.json();
+
+    if (data.success) {
+      setProfileModal({
+        open: true,
+        userId: userId,
+        data: data.data,
+        loading: false,
+        equipment: equipmentItem  // ← Store equipment data
+      });
+    } else {
+      setError('Failed to load owner profile');
+      setProfileModal({ 
+        open: false, 
+        userId: null, 
+        data: null, 
+        loading: false, 
+        equipment: null 
+      });
+    }
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    setError('Error loading owner profile');
+    setProfileModal({ 
+      open: false, 
+      userId: null, 
+      data: null, 
+      loading: false, 
+      equipment: null 
+    });
+  }
+};
+
+  const closeProfileModal = () => {
+    setProfileModal({ open: false, userId: null, data: null, loading: false });
+  };
+
+  const openInquiryModal = (equipmentId, ownerEmail, equipmentName) => {
+  setInquiryModal({ open: true, equipmentId, ownerEmail, equipmentName });
+  setInquiryForm({ name: '', email: '', phone: '', subject: '', message: '' });
+};
+
+const closeInquiryModal = () => {
+  setInquiryModal({ open: false, equipmentId: null, ownerEmail: null, equipmentName: null });
+  setInquiryForm({ name: '', email: '', phone: '', subject: '', message: '' });
+};
+
+const handleSendInquiry = async (e) => {
+  e.preventDefault();
+  
+  try {
+    const response = await fetch(`${API_BASE}/inquiry/equipment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        equipmentId: inquiryModal.equipmentId,
+        ...inquiryForm
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      alert('✅ ' + data.message);
+      closeInquiryModal();
+      closeProfileModal();
+    } else {
+      alert('❌ ' + (data.message || 'Failed to send inquiry'));
+    }
+  } catch (error) {
+    console.error('Inquiry error:', error);
+    alert('❌ Error sending inquiry. Please try again.');
+  }
+};
 
   const handleSearch = async () => {
     try {
@@ -162,6 +269,343 @@ const EquipmentFinder = () => {
         </div>
       </div>
 
+      {/* Profile Modal */}
+      {profileModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {profileModal.loading ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#3C6E71', borderTopColor: '#284B63' }}></div>
+                <p style={{ color: '#353535' }}>Loading profile...</p>
+              </div>
+            ) : profileModal.data ? (
+              <>
+                {/* Modal Header - Minimal */}
+                <div className="relative border-b px-6 py-4" style={{ borderColor: '#e5e7eb' }}>
+                  <button
+                    onClick={closeProfileModal}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" style={{ color: '#353535' }} />
+                  </button>
+                  
+                  {/* Owner Profile Photo */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full border-2 overflow-hidden bg-white flex-shrink-0" style={{ borderColor: '#3C6E71' }}>
+                      {profileModal.data.profile_photo ? (
+                        <img
+                          src={profileModal.data.profile_photo}
+                          alt={profileModal.data.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: '#3C6E71' }}>
+                          <User className="w-10 h-10 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-2xl font-bold mb-1 truncate" style={{ color: '#353535' }}>
+                        {profileModal.data.name}
+                      </h2>
+                      {profileModal.data.company_name && (
+                        <div className="flex items-center gap-2 text-sm" style={{ color: '#3C6E71' }}>
+                          <Building2 className="w-4 h-4 flex-shrink-0" />
+                          <span className="font-medium truncate">{profileModal.data.company_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Body */}
+                <div className="pt-20 px-8 pb-8">
+
+                  {/* Equipment Being Viewed */}
+{profileModal.equipment && (
+  <div className="mb-6 bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 border-2 border-teal-200">
+    <div className="flex items-start gap-4">
+      {profileModal.equipment.equipmentImages?.[0] ? (
+        <img 
+          src={profileModal.equipment.equipmentImages[0]} 
+          alt={profileModal.equipment.equipmentName}
+          className="w-24 h-24 object-cover rounded-lg shadow-md"
+        />
+      ) : (
+        <div className="w-24 h-24 flex items-center justify-center rounded-lg" style={{ backgroundColor: '#D9D9D9' }}>
+          <Package className="w-12 h-12" style={{ color: '#3C6E71' }} />
+        </div>
+      )}
+      <div className="flex-1">
+        <p className="text-xs text-gray-600 mb-1">📋 You're inquiring about:</p>
+        <h3 className="text-xl font-bold mb-1" style={{ color: '#353535' }}>
+          {profileModal.equipment.equipmentName}
+        </h3>
+        <p className="text-sm font-medium mb-2" style={{ color: '#3C6E71' }}>
+          {profileModal.equipment.equipmentType}
+        </p>
+        {profileModal.equipment.description && (
+          <p className="text-sm text-gray-600 line-clamp-2">
+            {profileModal.equipment.description}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+                  {/* Owner Info */}
+                  <div className="mb-6">
+                    <h2 className="text-3xl font-bold mb-2" style={{ color: '#353535' }}>
+                      {profileModal.data.name}
+                    </h2>
+                    {profileModal.data.company_name && (
+                      <div className="flex items-center gap-2 text-lg mb-3" style={{ color: '#3C6E71' }}>
+                        <Building2 className="w-5 h-5" />
+                        <span className="font-medium">{profileModal.data.company_name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contact Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3C6E71' }}>
+                          <Phone className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Mobile Number</p>
+                          <p className="font-semibold" style={{ color: '#353535' }}>{profileModal.data.mobile_number}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {profileModal.data.whatsapp_number && (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-500">
+                            <MessageCircle className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">WhatsApp</p>
+                            <p className="font-semibold" style={{ color: '#353535' }}>{profileModal.data.whatsapp_number}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3C6E71' }}>
+                          <Mail className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Email</p>
+                          <p className="font-semibold text-sm break-all" style={{ color: '#353535' }}>{profileModal.data.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#3C6E71' }}>
+                          <MapPin className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Location</p>
+                          <p className="font-semibold" style={{ color: '#353535' }}>{profileModal.data.location}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Equipment Count Badge */}
+                  <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Package className="w-8 h-8" style={{ color: '#3C6E71' }} />
+                        <div>
+                          <p className="text-sm text-gray-600">Total Equipment Listed</p>
+                          <p className="text-2xl font-bold" style={{ color: '#3C6E71' }}>
+                            {profileModal.data.equipment_count || 0}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inquiry Button */}
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      onClick={() => window.open(`tel:${profileModal.data.mobile_number}`)}
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors"
+                      style={{ backgroundColor: '#3C6E71', color: 'white' }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+                    >
+                      <Phone className="w-5 h-5" />
+                      Call
+                    </button>
+                    
+                    {profileModal.data.whatsapp_number && (
+                      <button
+                        onClick={() => window.open(`https://wa.me/${profileModal.data.whatsapp_number.replace(/[^0-9]/g, '')}`)}
+                        className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors bg-green-500 text-white hover:bg-green-600"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        WhatsApp
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        openInquiryModal(
+                          profileModal.equipment?.id,
+                          profileModal.data.email,
+                          profileModal.equipment?.equipmentName
+                        );
+                      }}
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors text-white"
+                      style={{ backgroundColor: '#3C6E71' }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+                    >
+                      <Mail className="w-5 h-5" />
+                      Inquiry
+                    </button>
+                  </div>
+
+                </div>
+              </>
+            ) : (
+              <div className="p-12 text-center">
+                <p style={{ color: '#353535' }}>Profile not found</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Inquiry Modal */}
+{inquiryModal.open && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
+      <div className="p-6 border-b" style={{ borderColor: '#3C6E71' }}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold" style={{ color: '#353535' }}>
+            Send Inquiry
+          </h2>
+          <button
+            onClick={closeInquiryModal}
+            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mt-2">
+          Inquiring about: <strong>{inquiryModal.equipmentName}</strong>
+        </p>
+      </div>
+
+      <form onSubmit={handleSendInquiry} className="p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+            Your Name *
+          </label>
+          <input
+            type="text"
+            required
+            value={inquiryForm.name}
+            onChange={(e) => setInquiryForm({...inquiryForm, name: e.target.value})}
+            className="w-full px-4 py-2 border rounded-lg outline-none"
+            style={{ borderColor: '#3C6E71' }}
+            placeholder="John Doe"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+            Your Email *
+          </label>
+          <input
+            type="email"
+            required
+            value={inquiryForm.email}
+            onChange={(e) => setInquiryForm({...inquiryForm, email: e.target.value})}
+            className="w-full px-4 py-2 border rounded-lg outline-none"
+            style={{ borderColor: '#3C6E71' }}
+            placeholder="john@example.com"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+            Phone Number
+          </label>
+          <input
+            type="tel"
+            value={inquiryForm.phone}
+            onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+            className="w-full px-4 py-2 border rounded-lg outline-none"
+            style={{ borderColor: '#3C6E71' }}
+            placeholder="+1234567890"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+            Subject
+          </label>
+          <input
+            type="text"
+            value={inquiryForm.subject}
+            onChange={(e) => setInquiryForm({...inquiryForm, subject: e.target.value})}
+            className="w-full px-4 py-2 border rounded-lg outline-none"
+            style={{ borderColor: '#3C6E71' }}
+            placeholder="Rental inquiry"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+            Message *
+          </label>
+          <textarea
+            required
+            value={inquiryForm.message}
+            onChange={(e) => setInquiryForm({...inquiryForm, message: e.target.value})}
+            className="w-full px-4 py-2 border rounded-lg outline-none resize-none"
+            style={{ borderColor: '#3C6E71' }}
+            rows="4"
+            placeholder="I'm interested in renting this equipment..."
+          />
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <button
+            type="button"
+            onClick={closeInquiryModal}
+            className="flex-1 px-6 py-3 border rounded-lg font-medium transition-colors"
+            style={{ borderColor: '#3C6E71', color: '#353535' }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="flex-1 px-6 py-3 rounded-lg font-medium transition-colors text-white"
+            style={{ backgroundColor: '#3C6E71' }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+          >
+            Send Inquiry
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
       {/* Top Bar with Menu Button */}
       <div className="bg-white shadow-sm border-b" style={{ borderColor: '#3C6E71' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -193,8 +637,6 @@ const EquipmentFinder = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-
         {/* Search and Filter Section */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-8 border" style={{ borderColor: '#3C6E71' }}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -316,7 +758,7 @@ const EquipmentFinder = () => {
             {equipment.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border cursor-pointer"
+                className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden border"
                 style={{ borderColor: '#3C6E71' }}
               >
                 {/* Equipment Image */}
@@ -379,16 +821,16 @@ const EquipmentFinder = () => {
                     )}
                   </div>
 
-                  {/* Action Button */}
+                 {/* Action Button */}
                   <button
-                    onClick={() => window.open(`tel:${item.contactNumber}`)}
+                    onClick={() => fetchOwnerProfile(item.user_id, item)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors"
                     style={{ backgroundColor: '#3C6E71', color: 'white' }}
                     onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
                     onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
                   >
-                    <Phone className="w-4 h-4" />
-                    Contact Owner
+                    <User className="w-4 h-4" />
+                    View Profile
                   </button>
                 </div>
               </div>

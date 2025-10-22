@@ -5,6 +5,7 @@ import {
   Edit, Save, X, Settings, LogOut, Eye, Lock, Trash2,
   MessageSquare, AlertCircle
 } from 'lucide-react';
+import ReviewSystem from '../components/ReviewComponent';
 
 const ManpowerDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -14,6 +15,8 @@ const ManpowerDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  const [showReviews, setShowReviews] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -240,6 +243,15 @@ const ManpowerDashboard = () => {
           </button>
 
           <div className="border-t border-gray-200 my-4"></div>
+
+            <button
+  onClick={() => setShowReviews(true)}
+  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 text-gray-700 hover:bg-gray-100 transition-all"
+>
+  <MessageSquare className="w-5 h-5" />
+  <span className="font-medium">Reviews</span>
+</button>
+
 
           <button
             onClick={handleLogout}
@@ -899,6 +911,18 @@ const ManpowerDashboard = () => {
           </div>
         )}
       </main>
+      {/* Review System Modal */}
+{showReviews && (
+  <ReviewSystem
+    isModal={true}
+    onClose={() => setShowReviews(false)}
+    currentUser={{
+      id: profile?.id,
+      firstName: profile?.first_name,
+      lastName: profile?.last_name
+    }}
+  />
+)}
     </div>
   );
 };
