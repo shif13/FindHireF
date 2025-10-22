@@ -19,6 +19,22 @@ const ManpowerFinder = () => {
   const [stats, setStats] = useState(null);
   const [categories, setCategories] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // NEW: Inquiry modal states
+  const [inquiryModal, setInquiryModal] = useState({ 
+    open: false, 
+    manpowerId: null, 
+    professionalEmail: null, 
+    professionalName: null 
+  });
+  
+  const [inquiryForm, setInquiryForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
 
   const API_BASE = `${import.meta.env.VITE_BACKEND_URL}/api/manpower-search`;
 
@@ -105,10 +121,167 @@ const ManpowerFinder = () => {
     }
   };
 
+  // NEW: Inquiry modal functions
+  const openInquiryModal = (manpowerId, professionalEmail, professionalName) => {
+    setInquiryModal({ open: true, manpowerId, professionalEmail, professionalName });
+    setInquiryForm({ name: '', email: '', phone: '', subject: '', message: '' });
+  };
+
+  const closeInquiryModal = () => {
+    setInquiryModal({ open: false, manpowerId: null, professionalEmail: null, professionalName: null });
+    setInquiryForm({ name: '', email: '', phone: '', subject: '', message: '' });
+  };
+
+  const handleSendInquiry = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/inquiry/manpower`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          manpowerId: inquiryModal.manpowerId,
+          ...inquiryForm
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('✅ ' + data.message);
+        closeInquiryModal();
+      } else {
+        alert('❌ ' + (data.message || 'Failed to send inquiry'));
+      }
+    } catch (error) {
+      console.error('Inquiry error:', error);
+      alert('❌ Error sending inquiry. Please try again.');
+    }
+  };
+
   // Profile Detail Modal
   if (selectedProfile) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#D9D9D9' }}>
+        {/* Inquiry Modal */}
+        {inquiryModal.open && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
+              <div className="p-6 border-b" style={{ borderColor: '#3C6E71' }}>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold" style={{ color: '#353535' }}>
+                    Send Inquiry
+                  </h2>
+                  <button
+                    onClick={closeInquiryModal}
+                    className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Inquiring about: <strong>{inquiryModal.professionalName}</strong>
+                </p>
+              </div>
+
+              <form onSubmit={handleSendInquiry} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+                    Your Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={inquiryForm.name}
+                    onChange={(e) => setInquiryForm({...inquiryForm, name: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg outline-none"
+                    style={{ borderColor: '#3C6E71' }}
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+                    Your Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={inquiryForm.email}
+                    onChange={(e) => setInquiryForm({...inquiryForm, email: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg outline-none"
+                    style={{ borderColor: '#3C6E71' }}
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={inquiryForm.phone}
+                    onChange={(e) => setInquiryForm({...inquiryForm, phone: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg outline-none"
+                    style={{ borderColor: '#3C6E71' }}
+                    placeholder="+1234567890"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    value={inquiryForm.subject}
+                    onChange={(e) => setInquiryForm({...inquiryForm, subject: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg outline-none"
+                    style={{ borderColor: '#3C6E71' }}
+                    placeholder="Job inquiry"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#353535' }}>
+                    Message *
+                  </label>
+                  <textarea
+                    required
+                    value={inquiryForm.message}
+                    onChange={(e) => setInquiryForm({...inquiryForm, message: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg outline-none resize-none"
+                    style={{ borderColor: '#3C6E71' }}
+                    rows="4"
+                    placeholder="I'm interested in hiring you for..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeInquiryModal}
+                    className="flex-1 px-6 py-3 border rounded-lg font-medium transition-colors"
+                    style={{ borderColor: '#3C6E71', color: '#353535' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 rounded-lg font-medium transition-colors text-white"
+                    style={{ backgroundColor: '#3C6E71' }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+                  >
+                    Send Inquiry
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Top Bar */}
         <div className="bg-white shadow-sm border-b" style={{ borderColor: '#3C6E71' }}>
           <div className="max-w-7xl mx-auto px-6 py-4">
@@ -255,8 +428,8 @@ const ManpowerFinder = () => {
                     <div>
                       <p className="text-sm text-gray-500">Resume/CV</p>
                       <a
-                        href={`${import.meta.env.VITE_BACKEND_URL}/${selectedProfile.cv_path}`}
-                        target="_blank"
+                          href={`${import.meta.env.VITE_BACKEND_URL}/uploads/${selectedProfile.cv_path.split(/[/\\]/).pop()}`}
+
                         rel="noopener noreferrer"
                         className="font-medium flex items-center gap-1 hover:underline"
                         style={{ color: '#3C6E71' }}
@@ -270,6 +443,47 @@ const ManpowerFinder = () => {
               </div>
             </div>
 
+            {/* Action Buttons */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              <button
+                onClick={() => window.open(`tel:${selectedProfile.mobile_number}`)}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors"
+                style={{ backgroundColor: '#3C6E71', color: 'white' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+              >
+                <Phone className="w-5 h-5" />
+                Call
+              </button>
+              
+              {selectedProfile.whatsapp_number && (
+                <button
+                  onClick={() => window.open(`https://wa.me/${selectedProfile.whatsapp_number.replace(/[^0-9]/g, '')}`)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors bg-green-500 text-white hover:bg-green-600"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  WhatsApp
+                </button>
+              )}
+              
+              <button
+                onClick={() => {
+                  openInquiryModal(
+                    selectedProfile.id,
+                    selectedProfile.email,
+                    `${selectedProfile.first_name} ${selectedProfile.last_name}`
+                  );
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors text-white"
+                style={{ backgroundColor: '#3C6E71' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#284B63'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#3C6E71'}
+              >
+                <Mail className="w-5 h-5" />
+                Inquiry
+              </button>
+            </div>
+
             {/* Certificates */}
             {selectedProfile.certificates && selectedProfile.certificates.length > 0 && (
               <div>
@@ -281,8 +495,8 @@ const ManpowerFinder = () => {
                   {selectedProfile.certificates.map((cert, index) => (
                     <a
                       key={index}
-                      href={`${import.meta.env.VITE_BACKEND_URL}/${cert}`}
-                      target="_blank"
+                      href={`${import.meta.env.VITE_BACKEND_URL}/uploads/${cert.split(/[/\\]/).pop()}`}
+
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 p-3 rounded-lg hover:shadow-md transition-all"
                       style={{ backgroundColor: '#D9D9D9' }}
@@ -398,41 +612,6 @@ const ManpowerFinder = () => {
           </h2>
           <p style={{ color: '#353535' }}>Search through our database of skilled professionals</p>
         </div>
-
-        {/* Stats Cards
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6 border" style={{ borderColor: '#3C6E71' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#353535' }}>Total Manpower</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: '#284B63' }}>{stats.totalManpower}</p>
-                </div>
-                <Users className="w-12 h-12" style={{ color: '#3C6E71' }} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#353535' }}>With CV</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">{stats.manpowerWithCV}</p>
-                </div>
-                <FileText className="w-12 h-12 text-green-600" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6 border" style={{ borderColor: '#3C6E71' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#353535' }}>Available Now</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: '#284B63' }}>{stats.availableManpower}</p>
-                </div>
-                <CheckCircle className="w-12 h-12" style={{ color: '#3C6E71' }} />
-              </div>
-            </div>
-          </div>
-        )} */}
 
         {/* Search Filters */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border" style={{ borderColor: '#3C6E71' }}>
