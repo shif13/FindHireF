@@ -4,7 +4,7 @@ import { uploadMultipleToCloudinary } from '../utils/cloudinaryHelper';
 import ReviewSystem from '../components/ReviewComponent'; 
 
 const BothDashboard = () => {
-  const [activeTab, setActiveTab] = useState('professional');
+const [activeTab, setActiveTab] = useState('basic');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -576,6 +576,17 @@ const BothDashboard = () => {
               <div className="border-b border-gray-200">
                 <div className="flex">
                   <button
+                    onClick={() => setActiveTab('basic')}
+                    className={`flex-1 px-6 py-4 font-semibold transition-all flex items-center justify-center gap-2 ${
+                      activeTab === 'basic'
+                        ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    Basic Info
+                  </button>
+                  <button
                     onClick={() => setActiveTab('professional')}
                     className={`flex-1 px-6 py-4 font-semibold transition-all flex items-center justify-center gap-2 ${
                       activeTab === 'professional'
@@ -602,7 +613,160 @@ const BothDashboard = () => {
 
               {/* Tab Content */}
               <div className="p-8">
-                {activeTab === 'professional' ? (
+                {activeTab === 'basic' ? (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h3>
+                      <p className="text-sm text-gray-600 mb-6">Update your common details (shown in sidebar)</p>
+                    </div>
+
+                    <form onSubmit={(e) => e.preventDefault()}>
+                      {/* Profile Photo */}
+                      <div className="flex items-center gap-6 mb-6 pb-6 border-b">
+                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-600 bg-gray-100">
+                          {photoPreview ? (
+                            <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <User className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoChange}
+                            className="hidden"
+                            id="profile-photo-basic"
+                          />
+                          <label
+                            htmlFor="profile-photo-basic"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors text-sm inline-flex items-center gap-2"
+                          >
+                            <Camera className="w-4 h-4" />
+                            Change Photo
+                          </label>
+                          <p className="text-xs text-gray-500 mt-2">JPG, PNG up to 5MB</p>
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            First Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Last Name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            disabled
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            WhatsApp Number
+                          </label>
+                          <input
+                            type="tel"
+                            name="whatsapp"
+                            value={formData.whatsapp}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Location <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-6 mt-6 border-t">
+                        <button
+                          type="button"
+                          onClick={() => fetchProfiles()}
+                          className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveProfessionalDetails}
+                          disabled={saving}
+                          className={`flex-1 px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                            saving
+                              ? 'bg-gray-400 cursor-not-allowed text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          <Save className="w-5 h-5" />
+                          {saving ? 'Saving...' : 'Save Basic Info'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                ) : activeTab === 'professional' ? (
+                
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Professional Profile</h3>
